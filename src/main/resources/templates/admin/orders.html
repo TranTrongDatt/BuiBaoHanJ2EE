@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{admin/layout :: head}"></th:block>
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{admin/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{admin/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="admin-content">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="mb-1"><i class="bi bi-receipt me-2"></i>Quản lý đơn hàng</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Đơn hàng</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <ul class="nav nav-tabs mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/admin/orders}">Tất cả</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders(status=PENDING)}">Chờ xử lý</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders(status=SHIPPING)}">Đang giao</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders(status=COMPLETED)}">Hoàn thành</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders(status=CANCELLED)}">Đã hủy</a>
+                    </li>
+                </ul>
+
+                <!-- Table Card -->
+                <div class="admin-table-card">
+                    <div class="admin-table-header">
+                        <h3><i class="bi bi-table me-2"></i>Danh sách đơn hàng</h3>
+                    </div>
+                    <div class="admin-table-body">
+                        <table class="admin-table" id="ordersTable">
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Ngày đặt</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="order : ${orders}">
+                                    <td th:text="${'#' + order.id}"></td>
+                                    <td th:text="${order.receiverName ?: (order.user != null ? (order.user.fullName ?: order.user.username) : 'N/A')}"></td>
+                                    <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    <td>
+                                        <span class="price" th:text="${#numbers.formatDecimal(order.totalAmount ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                    </td>
+                                    <td>
+                                        <span class="admin-badge admin-badge-warning" th:if="${order.status?.name() == 'PENDING'}">Chờ xử lý</span>
+                                        <span class="admin-badge admin-badge-info" th:if="${order.status?.name() == 'PROCESSING'}">Đang xử lý</span>
+                                        <span class="admin-badge admin-badge-primary" th:if="${order.status?.name() == 'SHIPPING'}">Đang giao</span>
+                                        <span class="admin-badge admin-badge-success" th:if="${order.status?.name() == 'COMPLETED'}">Hoàn thành</span>
+                                        <span class="admin-badge admin-badge-danger" th:if="${order.status?.name() == 'CANCELLED'}">Đã hủy</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a class="admin-btn admin-btn-sm admin-btn-info" th:href="@{/admin/orders/{id}(id=${order.id})}">
+                                            <i class="bi bi-eye"></i> Chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                                <!-- Empty state -->
+                                <tr th:if="${orders == null or orders.empty}">
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="bi bi-inbox display-4 text-muted"></i>
+                                        <p class="text-muted mt-2">Chưa có đơn hàng nào</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script>
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

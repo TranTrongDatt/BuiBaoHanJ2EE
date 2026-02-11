@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chào mừng đến với MiniVerse!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .welcome-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .content p {
+            margin: 15px 0;
+            color: #555;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        .feature {
+            flex: 1 1 45%;
+            padding: 15px;
+            margin: 5px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 200px;
+        }
+        .feature-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        .feature h4 {
+            margin: 0 0 5px;
+            color: #333;
+        }
+        .feature p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="welcome-icon">🎉</div>
+            <h1>Chào mừng đến với MiniVerse!</h1>
+            <p>Hành trình khám phá sách bắt đầu từ đây</p>
+        </div>
+        
+        <div class="content">
+            <h2>Xin chào <span th:text="${username}">Người dùng</span>! 👋</h2>
+            
+            <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>MiniVerse</strong>! 
+               Chúng tôi rất vui được chào đón bạn đến với cộng đồng yêu sách của chúng tôi.</p>
+            
+            <p>Tài khoản của bạn đã được tạo thành công với thông tin:</p>
+            <ul>
+                <li><strong>Tên đăng nhập:</strong> <span th:text="${username}">username</span></li>
+                <li><strong>Email:</strong> <span th:text="${email}">email@example.com</span></li>
+            </ul>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">📚</div>
+                    <h4>Kho sách phong phú</h4>
+                    <p>Hàng ngàn đầu sách đa dạng thể loại</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🛒</div>
+                    <h4>Mua sắm dễ dàng</h4>
+                    <p>Thanh toán nhanh chóng, an toàn</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h4>AI Tư vấn</h4>
+                    <p>Chatbot thông minh hỗ trợ 24/7</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📖</div>
+                    <h4>Thư viện online</h4>
+                    <p>Mượn sách điện tử miễn phí</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a th:href="${loginLink}" class="button">Bắt đầu khám phá ngay</a>
+            </div>
+            
+            <p>Nếu bạn có bất kỳ câu hỏi nào, đừng ngần ngại liên hệ với chúng tôi qua:</p>
+            <ul>
+                <li>Email: support@miniverse.com</li>
+                <li>Hotline: 1900 xxxx</li>
+            </ul>
+            
+            <p>Chúc bạn có trải nghiệm tuyệt vời tại MiniVerse! 📖</p>
+            
+            <p>Trân trọng,<br/>
+            <strong>Đội ngũ MiniVerse</strong></p>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+                <a href="#">Instagram</a>
+            </div>
+            <p>© 2024 MiniVerse - Hệ thống quản lý sách và thư viện</p>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+        </div>
+    </div>
+</body>
+</html>

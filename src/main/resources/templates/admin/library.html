@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{admin/layout :: head}"></th:block>
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{admin/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{admin/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="admin-content">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="mb-1"><i class="bi bi-building me-2"></i>Quản lý thư viện</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Thư viện</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+        
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-credit-card"></i>
+                            </div>
+                            <div class="stat-value" th:text="${stats?.activeCards ?: 0}">0</div>
+                            <div class="stat-label">Thẻ hoạt động</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon info">
+                                <i class="bi bi-book-half"></i>
+                            </div>
+                            <div class="stat-value" th:text="${stats?.activeBorrows ?: 0}">0</div>
+                            <div class="stat-label">Đang mượn</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-value" th:text="${stats?.overdueCount ?: 0}">0</div>
+                            <div class="stat-label">Quá hạn</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon danger">
+                                <i class="bi bi-currency-dollar"></i>
+                            </div>
+                            <div class="stat-value" th:text="${#numbers.formatDecimal(stats?.unpaidFines ?: 0, 0, 'COMMA', 0, 'POINT')}">0</div>
+                            <div class="stat-label">Tiền phạt chưa thu</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#cards">
+                            <i class="bi bi-credit-card-2-front me-2"></i>Thẻ thư viện
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#borrows">
+                            <i class="bi bi-book-half me-2"></i>Phiếu mượn
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#fines">
+                            <i class="bi bi-cash-coin me-2"></i>Tiền phạt
+                        </a>
+                    </li>
+                </ul>
+        
+                <div class="tab-content">
+                    <!-- Library Cards Tab -->
+                    <div id="cards" class="tab-pane fade show active pt-3">
+                        <div class="admin-table-card">
+                            <div class="admin-table-header">
+                                <h3>Thẻ thư viện</h3>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm..." style="width: 200px;">
+                                    <select class="form-select form-select-sm" style="width: 120px;">
+                                        <option value="">Tất cả</option>
+                                        <option value="active">Hoạt động</option>
+                                        <option value="expired">Hết hạn</option>
+                                        <option value="suspended">Tạm khóa</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="admin-table-body">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Số thẻ</th>
+                                            <th>Người dùng</th>
+                                            <th>Ngày cấp</th>
+                                            <th>Ngày hết hạn</th>
+                                            <th>Trạng thái</th>
+                                            <th>Sách mượn</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="card : ${cards}">
+                                            <td><code th:text="${card.cardNumber}">LC-123456</code></td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img th:src="${card.user.avatarUrl ?: '/images/default-avatar.png'}" 
+                                                         class="rounded-circle me-2" alt="" style="width: 32px; height: 32px;">
+                                                    <span th:text="${card.user.fullName ?: card.user.username}">User Name</span>
+                                                </div>
+                                            </td>
+                                            <td th:text="${#temporals.format(card.issuedDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                                            <td th:text="${#temporals.format(card.expiryDate, 'dd/MM/yyyy')}">01/01/2025</td>
+                                            <td>
+                                                <span th:class="'admin-badge ' + (${card.active} ? 'admin-badge-success' : 'admin-badge-secondary')"
+                                                      th:text="${card.active} ? 'Hoạt động' : 'Không hoạt động'">Active</span>
+                                            </td>
+                                            <td th:text="${card.borrowCount}">0</td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <button class="admin-btn admin-btn-sm admin-btn-primary" title="Gia hạn">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </button>
+                                                    <button class="admin-btn admin-btn-sm admin-btn-warning" title="Tạm khóa" th:if="${card.active}">
+                                                        <i class="bi bi-pause-circle"></i>
+                                                    </button>
+                                                    <button class="admin-btn admin-btn-sm admin-btn-success" title="Kích hoạt" th:if="${!card.active}">
+                                                        <i class="bi bi-play-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${cards == null or cards.empty}">
+                                            <td colspan="7" class="text-center py-4">
+                                                <i class="bi bi-inbox display-4 text-muted"></i>
+                                                <p class="text-muted mt-2">Chưa có thẻ thư viện nào</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Borrow Records Tab -->
+                    <div id="borrows" class="tab-pane fade pt-3">
+                        <div class="admin-table-card">
+                            <div class="admin-table-header">
+                                <h3>Phiếu mượn</h3>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" style="width: 120px;">
+                                        <option value="">Tất cả</option>
+                                        <option value="borrowed">Đang mượn</option>
+                                        <option value="returned">Đã trả</option>
+                                        <option value="overdue">Quá hạn</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="admin-table-body">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Người mượn</th>
+                                            <th>Sách</th>
+                                            <th>Ngày mượn</th>
+                                            <th>Hạn trả</th>
+                                            <th>Ngày trả</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="record : ${borrows}">
+                                            <td th:text="${record.id}">#1</td>
+                                            <td th:text="${record.user.username}">User</td>
+                                            <td th:text="${record.book.title}">Book Title</td>
+                                            <td th:text="${#temporals.format(record.borrowDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                                            <td th:text="${#temporals.format(record.dueDate, 'dd/MM/yyyy')}">15/01/2024</td>
+                                            <td>
+                                                <span th:if="${record.returnDate}" th:text="${#temporals.format(record.returnDate, 'dd/MM/yyyy')}">10/01/2024</span>
+                                                <span th:if="${record.returnDate == null}" class="text-muted">-</span>
+                                            </td>
+                                            <td>
+                                                <span th:switch="${record.status?.name()}">
+                                                    <span th:case="'BORROWED'" class="admin-badge admin-badge-primary">Đang mượn</span>
+                                                    <span th:case="'RETURNED'" class="admin-badge admin-badge-success">Đã trả</span>
+                                                    <span th:case="'OVERDUE'" class="admin-badge admin-badge-danger">Quá hạn</span>
+                                                    <span th:case="*" class="admin-badge admin-badge-secondary" th:text="${record.status}">Status</span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="admin-btn admin-btn-sm admin-btn-success" th:if="${record.status?.name() == 'BORROWED'}" title="Xử lý trả sách">
+                                                    <i class="bi bi-box-arrow-in-left"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${borrows == null or borrows.empty}">
+                                            <td colspan="8" class="text-center py-4">
+                                                <i class="bi bi-inbox display-4 text-muted"></i>
+                                                <p class="text-muted mt-2">Chưa có phiếu mượn nào</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fines Tab -->
+                    <div id="fines" class="tab-pane fade pt-3">
+                        <div class="admin-table-card">
+                            <div class="admin-table-header">
+                                <h3>Tiền phạt</h3>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" style="width: 120px;">
+                                        <option value="">Tất cả</option>
+                                        <option value="unpaid">Chưa thu</option>
+                                        <option value="paid">Đã thu</option>
+                                        <option value="waived">Miễn phạt</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="admin-table-body">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Người dùng</th>
+                                            <th>Phiếu mượn</th>
+                                            <th>Lý do</th>
+                                            <th>Số tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="fine : ${fines}">
+                                            <td th:text="${fine.id}">#1</td>
+                                            <td th:text="${fine.user.username}">User</td>
+                                            <td>
+                                                <span th:text="${fine.borrowRecord?.book?.title}">Book Title</span>
+                                            </td>
+                                            <td th:text="${fine.reason}">Quá hạn</td>
+                                            <td th:text="${#numbers.formatDecimal(fine.amount, 0, 'COMMA', 0, 'POINT')} + ' VND'">50,000 VND</td>
+                                            <td>
+                                                <span th:class="'admin-badge ' + (${fine.paid} ? 'admin-badge-success' : 'admin-badge-danger')"
+                                                      th:text="${fine.paid} ? 'Đã thu' : 'Chưa thu'">Unpaid</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1" th:if="${!fine.paid}">
+                                                    <button class="admin-btn admin-btn-sm admin-btn-success" title="Đánh dấu đã thu">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                    <button class="admin-btn admin-btn-sm admin-btn-warning" title="Miễn phạt">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${fines == null or fines.empty}">
+                                            <td colspan="7" class="text-center py-4">
+                                                <i class="bi bi-inbox display-4 text-muted"></i>
+                                                <p class="text-muted mt-2">Chưa có tiền phạt nào</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script>
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

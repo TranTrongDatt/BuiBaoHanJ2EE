@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{admin/layout :: head}"></th:block>
+    <style>
+        .detail-section { background:#fff; border-radius:10px; box-shadow:0 1px 8px rgba(0,0,0,0.06); margin-bottom:1.25rem; overflow:hidden; }
+        .detail-section-header { background:#f8fafc; padding:0.75rem 1.15rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:0.5rem; }
+        .detail-section-body { padding:1.15rem; }
+        .info-row { display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f3f4f6; font-size:0.92rem; }
+        .info-row:last-child { border-bottom:none; }
+        .info-label { color:#6b7280; }
+        .info-value { font-weight:600; text-align:right; }
+        .status-PENDING { background:#fef3c7; color:#92400e; }
+        .status-CONFIRMED { background:#dbeafe; color:#1e40af; }
+        .status-PROCESSING { background:#e0e7ff; color:#3730a3; }
+        .status-SHIPPING { background:#cffafe; color:#155e75; }
+        .status-DELIVERED { background:#d1fae5; color:#065f46; }
+        .status-COMPLETED { background:#d1fae5; color:#065f46; }
+        .status-CANCELLED { background:#fee2e2; color:#991b1b; }
+        .status-RETURNED { background:#fce7f3; color:#9d174d; }
+        .status-badge { display:inline-block; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600; }
+        .order-item-row { display:flex; align-items:center; gap:1rem; padding:0.7rem 0; border-bottom:1px solid #f3f4f6; }
+        .order-item-row:last-child { border-bottom:none; }
+        .order-item-img { width:50px; height:65px; object-fit:cover; border-radius:5px; flex-shrink:0; }
+        .order-item-name { font-weight:600; font-size:0.92rem; }
+        .order-item-meta { font-size:0.82rem; color:#6b7280; }
+        .order-item-price { font-weight:700; color:#dc2626; white-space:nowrap; }
+        .total-final { font-size:1.1rem; font-weight:800; color:#6366f1; }
+        .action-btn { min-width:120px; }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <th:block th:replace="~{admin/layout :: sidebar}"></th:block>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+
+        <div class="admin-main">
+            <th:block th:replace="~{admin/layout :: topbar}"></th:block>
+
+            <main class="admin-content">
+                <!-- Breadcrumb -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="mb-1"><i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/orders}">Đơn hàng</a></li>
+                                <li class="breadcrumb-item active" th:text="${order.orderCode}">ORD-xxx</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <a th:href="@{/admin/orders}" class="admin-btn admin-btn-sm admin-btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Quay lại
+                    </a>
+                </div>
+
+                <!-- Flash messages -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle me-1"></i><span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle me-1"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="row">
+                    <!-- Left column -->
+                    <div class="col-lg-8">
+                        <!-- Order items -->
+                        <div class="detail-section">
+                            <div class="detail-section-header"><i class="bi bi-box-seam"></i> Sản phẩm (<span th:text="${#lists.size(order.items)}">0</span>)</div>
+                            <div class="detail-section-body">
+                                <div th:each="item : ${order.items}" class="order-item-row">
+                                    <img th:src="@{${item.bookImage != null ? item.bookImage : '/images/banner/hero-books.png'}}"
+                                         th:alt="${item.bookTitle}"
+                                         onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
+                                         class="order-item-img">
+                                    <div style="flex:1; min-width:0;">
+                                        <div class="order-item-name" th:text="${item.bookTitle}">Tên sách</div>
+                                        <div class="order-item-meta">
+                                            ISBN: <span th:text="${item.bookIsbn ?: 'N/A'}"></span>
+                                        </div>
+                                        <div class="order-item-meta">
+                                            <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                                            × <span th:text="${item.quantity}">1</span>
+                                        </div>
+                                    </div>
+                                    <div class="order-item-price">
+                                        <span th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                                    </div>
+                                </div>
+
+                                <hr class="my-3">
+                                <div class="info-row">
+                                    <span class="info-label">Tạm tính</span>
+                                    <span class="info-value" th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Phí vận chuyển</span>
+                                    <span class="info-value" th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                                </div>
+                                <div th:if="${order.discountAmount != null and order.discountAmount > 0}" class="info-row">
+                                    <span class="info-label">Giảm giá</span>
+                                    <span class="info-value text-success">-<span th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'NONE')}">0</span>₫</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="fw-bold">Tổng thanh toán</span>
+                                    <span class="total-final" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Actions -->
+                        <div class="detail-section">
+                            <div class="detail-section-header"><i class="bi bi-gear"></i> Thao tác quản lý</div>
+                            <div class="detail-section-body">
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <!-- Confirm -->
+                                    <button th:if="${order.status.name() == 'PENDING'}"
+                                            class="btn btn-primary action-btn" onclick="orderAction(this)"
+                                            th:data-url="@{/admin/orders/{id}/confirm(id=${order.id})}"
+                                            data-confirm="Xác nhận đơn hàng này?">
+                                        <i class="bi bi-check-circle me-1"></i>Xác nhận
+                                    </button>
+                                    <!-- Ship -->
+                                    <button th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PROCESSING'}"
+                                            class="btn btn-info text-white action-btn" data-bs-toggle="modal" data-bs-target="#shipModal">
+                                        <i class="bi bi-truck me-1"></i>Giao hàng
+                                    </button>
+                                    <!-- Deliver -->
+                                    <button th:if="${order.status.name() == 'SHIPPING'}"
+                                            class="btn btn-success action-btn" onclick="orderAction(this)"
+                                            th:data-url="@{/admin/orders/{id}/deliver(id=${order.id})}"
+                                            data-confirm="Xác nhận đã giao hàng thành công?">
+                                        <i class="bi bi-house-check me-1"></i>Đã giao
+                                    </button>
+                                    <!-- Cancel -->
+                                    <button th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CONFIRMED'}"
+                                            class="btn btn-outline-danger action-btn" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                        <i class="bi bi-x-circle me-1"></i>Hủy đơn
+                                    </button>
+                                    <!-- View Invoice HTML -->
+                                    <a th:href="@{/admin/orders/{id}/invoice(id=${order.id})}"
+                                       class="btn btn-outline-primary action-btn" target="_blank">
+                                        <i class="bi bi-eye me-1"></i>Xem hóa đơn
+                                    </a>
+                                    <!-- Print PDF -->
+                                    <a th:href="@{/admin/orders/{id}/pdf(id=${order.id})}"
+                                       class="btn btn-outline-secondary action-btn">
+                                        <i class="bi bi-file-pdf me-1"></i>Tải PDF
+                                    </a>
+                                </div>
+
+                                <!-- Update payment status -->
+                                <div class="border rounded p-3 mt-2">
+                                    <h6 class="mb-2"><i class="bi bi-credit-card me-1"></i>Cập nhật thanh toán</h6>
+                                    <div class="d-flex gap-2">
+                                        <select id="paymentStatusSelect" class="form-select form-select-sm" style="max-width:200px;">
+                                            <option value="PENDING" th:selected="${order.paymentStatus.name() == 'PENDING'}">Chưa thanh toán</option>
+                                            <option value="PAID" th:selected="${order.paymentStatus.name() == 'PAID'}">Đã thanh toán</option>
+                                            <option value="REFUNDED" th:selected="${order.paymentStatus.name() == 'REFUNDED'}">Đã hoàn tiền</option>
+                                        </select>
+                                        <input type="text" id="transactionIdInput" class="form-control form-control-sm" placeholder="Mã giao dịch (tuỳ chọn)" style="max-width:200px;">
+                                        <button class="btn btn-sm btn-outline-primary" th:data-url="@{/admin/orders/{id}/payment-status(id=${order.id})}" onclick="updatePayment(this)">
+                                            Cập nhật
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right column -->
+                    <div class="col-lg-4">
+                        <!-- Order info -->
+                        <div class="detail-section">
+                            <div class="detail-section-header"><i class="bi bi-info-circle"></i> Thông tin đơn</div>
+                            <div class="detail-section-body">
+                                <div class="info-row">
+                                    <span class="info-label">Mã đơn</span>
+                                    <span class="info-value" th:text="${order.orderCode}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Trạng thái</span>
+                                    <span class="info-value">
+                                        <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
+                                              th:text="${order.status.displayName}"></span>
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Ngày đặt</span>
+                                    <span class="info-value" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Thanh toán</span>
+                                    <span class="info-value" th:text="${order.paymentMethod.displayName}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">TT thanh toán</span>
+                                    <span class="info-value" th:text="${order.paymentStatus.name()}"></span>
+                                </div>
+                                <div th:if="${order.trackingNumber != null}" class="info-row">
+                                    <span class="info-label">Mã vận đơn</span>
+                                    <span class="info-value" th:text="${order.trackingNumber}"></span>
+                                </div>
+                                <div th:if="${order.confirmedDate != null}" class="info-row">
+                                    <span class="info-label">Ngày xác nhận</span>
+                                    <span class="info-value" th:text="${#temporals.format(order.confirmedDate, 'dd/MM/yyyy HH:mm')}"></span>
+                                </div>
+                                <div th:if="${order.shippedDate != null}" class="info-row">
+                                    <span class="info-label">Ngày giao</span>
+                                    <span class="info-value" th:text="${#temporals.format(order.shippedDate, 'dd/MM/yyyy HH:mm')}"></span>
+                                </div>
+                                <div th:if="${order.deliveredDate != null}" class="info-row">
+                                    <span class="info-label">Ngày nhận</span>
+                                    <span class="info-value" th:text="${#temporals.format(order.deliveredDate, 'dd/MM/yyyy HH:mm')}"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer info -->
+                        <div class="detail-section">
+                            <div class="detail-section-header"><i class="bi bi-person"></i> Khách hàng</div>
+                            <div class="detail-section-body">
+                                <div class="info-row">
+                                    <span class="info-label">Tài khoản</span>
+                                    <span class="info-value" th:text="${order.user?.username}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value" th:text="${order.user?.email}"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Receiver info -->
+                        <div class="detail-section">
+                            <div class="detail-section-header"><i class="bi bi-geo-alt"></i> Người nhận</div>
+                            <div class="detail-section-body">
+                                <div class="info-row">
+                                    <span class="info-label">Họ tên</span>
+                                    <span class="info-value" th:text="${order.receiverName}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">SĐT</span>
+                                    <span class="info-value" th:text="${order.receiverPhone}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Địa chỉ</span>
+                                    <span class="info-value" style="max-width:180px; word-wrap:break-word; text-align:right;" th:text="${order.shippingAddress}"></span>
+                                </div>
+                                <div th:if="${order.notes != null and !order.notes.isEmpty()}" class="info-row">
+                                    <span class="info-label">Ghi chú</span>
+                                    <span class="info-value" th:text="${order.notes}"></span>
+                                </div>
+                                <div th:if="${order.cancelReason != null and !order.cancelReason.isEmpty()}" class="info-row">
+                                    <span class="info-label text-danger">Lý do hủy</span>
+                                    <span class="info-value text-danger" th:text="${order.cancelReason}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Ship Modal -->
+    <div class="modal fade" id="shipModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Giao hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Mã vận đơn *</label>
+                        <input type="text" id="trackingNumberInput" class="form-control" placeholder="VD: GHTK123456789" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-info text-white" th:data-url="@{/admin/orders/{id}/ship(id=${order.id})}" onclick="shipOrder(this)">
+                        <i class="bi bi-truck me-1"></i>Xác nhận giao
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="bi bi-x-circle me-2"></i>Hủy đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Lý do hủy</label>
+                        <textarea id="cancelReasonInput" class="form-control" rows="3" placeholder="Nhập lý do hủy đơn..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-danger" th:data-url="@{/admin/orders/{id}/cancel(id=${order.id})}" onclick="cancelOrder(this)">
+                        <i class="bi bi-x-circle me-1"></i>Xác nhận hủy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script>
+        function toggleAdminSidebar() {
+            var s=document.getElementById('adminSidebar'), o=document.getElementById('sidebarOverlay');
+            s.classList.toggle('active'); o.classList.toggle('active');
+        }
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+        function orderAction(btn) {
+            var url = btn.dataset.url;
+            var msg = btn.dataset.confirm || 'Xác nhận thao tác?';
+            if (!confirm(msg)) return;
+            var headers = {'Content-Type':'application/x-www-form-urlencoded'};
+            headers[csrfHeader] = csrfToken;
+            fetch(url, { method:'POST', headers: headers })
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    if(data.success) { alert(data.message || 'Thành công!'); location.reload(); }
+                    else { alert('Lỗi: ' + (data.message || 'Có lỗi xảy ra')); }
+                })
+                .catch(function(e){ alert('Lỗi kết nối: ' + e.message); });
+        }
+
+        function shipOrder(btn) {
+            var url = btn.dataset.url;
+            var tracking = document.getElementById('trackingNumberInput').value.trim();
+            if (!tracking) { alert('Vui lòng nhập mã vận đơn'); return; }
+            var headers = {'Content-Type':'application/x-www-form-urlencoded'};
+            headers[csrfHeader] = csrfToken;
+            fetch(url, {
+                method:'POST',
+                headers: headers,
+                body: 'trackingNumber=' + encodeURIComponent(tracking)
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if(data.success) { alert('Đã chuyển sang giao hàng!'); location.reload(); }
+                else { alert('Lỗi: ' + (data.message || 'Có lỗi xảy ra')); }
+            })
+            .catch(function(e){ alert('Lỗi: ' + e.message); });
+        }
+
+        function cancelOrder(btn) {
+            var url = btn.dataset.url;
+            var reason = document.getElementById('cancelReasonInput').value.trim();
+            var headers = {'Content-Type':'application/x-www-form-urlencoded'};
+            headers[csrfHeader] = csrfToken;
+            fetch(url, {
+                method:'POST',
+                headers: headers,
+                body: 'reason=' + encodeURIComponent(reason)
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if(data.success) { alert('Đã hủy đơn hàng!'); location.reload(); }
+                else { alert('Lỗi: ' + (data.message || 'Có lỗi xảy ra')); }
+            })
+            .catch(function(e){ alert('Lỗi: ' + e.message); });
+        }
+
+        function updatePayment(btn) {
+            var url = btn.dataset.url;
+            var ps = document.getElementById('paymentStatusSelect').value;
+            var tid = document.getElementById('transactionIdInput').value.trim();
+            var headers = {'Content-Type':'application/x-www-form-urlencoded'};
+            headers[csrfHeader] = csrfToken;
+            var body = 'paymentStatus=' + encodeURIComponent(ps);
+            if (tid) body += '&transactionId=' + encodeURIComponent(tid);
+            fetch(url, { method:'POST', headers: headers, body: body })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if(data.success) { alert('Đã cập nhật thanh toán!'); location.reload(); }
+                else { alert('Lỗi: ' + (data.message || 'Có lỗi xảy ra')); }
+            })
+            .catch(function(e){ alert('Lỗi: ' + e.message); });
+        }
+    </script>
+</body>
+</html>

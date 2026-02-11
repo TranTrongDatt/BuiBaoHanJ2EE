@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+    <title>Dịch vụ mượn sách - MiniVerse</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Hero Section -->
+    <section class="service-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold text-primary mb-4">
+                        <i class="bi bi-book-half me-3"></i>Dịch vụ Mượn Sách
+                    </h1>
+                    <p class="lead text-muted">
+                        MiniVerse cung cấp dịch vụ mượn/trả sách tiện lợi cho mọi độc giả. 
+                        Đọc sách thoải mái với chi phí hợp lý!
+                    </p>
+                    <a th:href="@{/library}" class="btn btn-primary btn-lg mt-3" sec:authorize="isAuthenticated()">
+                        <i class="bi bi-credit-card-2-front me-2"></i>Xem thẻ thư viện của tôi
+                    </a>
+                    <a th:href="@{/login}" class="btn btn-primary btn-lg mt-3" sec:authorize="!isAuthenticated()">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập để mượn sách
+                    </a>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <img th:src="@{/images/service-hero.png}" alt="Library Service" 
+                         class="img-fluid" style="max-height: 400px;"
+                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/2232/2232688.png'">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bảng quy định mượn sách -->
+    <section class="service-rules py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">
+                <i class="bi bi-clipboard-check text-primary me-2"></i>
+                Bảng Quy Định Mượn/Trả Sách
+            </h2>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered shadow-sm">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col" style="width: 30%;">Chỉ mục</th>
+                            <th scope="col">Quy định chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong><i class="bi bi-stack me-2"></i>Số lượng mượn tối đa</strong></td>
+                            <td>
+                                <ul class="mb-0">
+                                    <li><strong>Thẻ mới:</strong> Tối đa 3 cuốn/lần</li>
+                                    <li><strong>Thẻ VIP:</strong> Tối đa 5 cuốn/lần (đã trả đúng hạn ≥ 3 đơn)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-calendar-check me-2"></i>Thời hạn mượn</strong></td>
+                            <td>14 ngày kể từ ngày phê duyệt</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-arrow-repeat me-2"></i>Gia hạn</strong></td>
+                            <td>Được phép gia hạn <strong>01 lần</strong> (thêm 7 ngày) nếu sách chưa quá hạn</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td><strong><i class="bi bi-exclamation-triangle me-2"></i>Phí trả muộn</strong></td>
+                            <td><span class="badge bg-danger fs-6">10,000 VNĐ / ngày / cuốn</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-check2-circle me-2"></i>Trạng thái sách</strong></td>
+                            <td>Phải trùng khớp với trạng thái lúc mượn (không rách, hỏng, mất trang)</td>
+                        </tr>
+                        <tr>
+                            <td><strong><i class="bi bi-bookmark-star me-2"></i>Đặt chỗ</strong></td>
+                            <td>Ưu tiên người đặt trước nếu sách đang được mượn hết</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cách thức mượn sách -->
+    <section class="service-steps py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">
+                <i class="bi bi-diagram-3 text-primary me-2"></i>
+                Cách Thức Mượn Sách
+            </h2>
+            <div class="row g-4">
+                <!-- Step 1 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                 style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">1</div>
+                            <h5 class="card-title">Lập Thẻ Thư Viện</h5>
+                            <p class="card-text text-muted">Đăng ký tài khoản và tạo thẻ thư viện miễn phí</p>
+                            <i class="bi bi-person-vcard text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Step 2 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                 style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">2</div>
+                            <h5 class="card-title">Chọn Sách</h5>
+                            <p class="card-text text-muted">Duyệt thư viện và chọn sách muốn mượn (tối đa 3-5 cuốn)</p>
+                            <i class="bi bi-search text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Step 3 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                 style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">3</div>
+                            <h5 class="card-title">Chờ Duyệt</h5>
+                            <p class="card-text text-muted">Thủ thư sẽ xác nhận yêu cầu trong 24h</p>
+                            <i class="bi bi-hourglass-split text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Step 4 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                 style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">4</div>
+                            <h5 class="card-title">Nhận Sách</h5>
+                            <p class="card-text text-muted">Đến cửa hàng nhận sách hoặc chờ giao tận nơi</p>
+                            <i class="bi bi-box-seam text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Phương thức mượn -->
+    <section class="service-methods py-5 bg-light">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Online -->
+                <div class="col-md-6">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0"><i class="bi bi-globe me-2"></i>Mượn Online</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Đăng nhập tài khoản</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Có thẻ thư viện hợp lệ</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Chọn sách và đặt mượn</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Chờ thủ thư duyệt (24h)</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Nhận sách tại cửa hàng hoặc ship</li>
+                            </ul>
+                            <div class="mt-3">
+                                <a th:href="@{/chat/ai}" class="btn btn-outline-primary" sec:authorize="isAuthenticated()">
+                                    <i class="bi bi-robot me-2"></i>Mượn qua AI Chatbot
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Offline -->
+                <div class="col-md-6">
+                    <div class="card h-100 border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h4 class="mb-0"><i class="bi bi-shop me-2"></i>Mượn Offline</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Đến trực tiếp cửa hàng</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Mang theo CCCD/CMND</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Lập thẻ thư viện tại chỗ (nếu chưa có)</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Chọn sách trực tiếp</li>
+                                <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Nhận sách ngay</li>
+                            </ul>
+                            <div class="mt-3">
+                                <a th:href="@{/about}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-geo-alt me-2"></i>Xem địa chỉ cửa hàng
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="service-cta py-5 text-center" style="background: linear-gradient(135deg, #F4A6C1, #74B9FF);">
+        <div class="container">
+            <h2 class="text-white mb-4">Sẵn sàng khám phá thế giới sách?</h2>
+            <p class="text-white lead mb-4">Lập thẻ thư viện ngay hôm nay để được mượn sách!</p>
+            <a th:href="@{/library/my-card}" class="btn btn-light btn-lg" sec:authorize="isAuthenticated()">
+                <i class="bi bi-credit-card-2-front me-2"></i>Xem/Lập thẻ thư viện
+            </a>
+            <a th:href="@{/register}" class="btn btn-light btn-lg" sec:authorize="!isAuthenticated()">
+                <i class="bi bi-person-plus me-2"></i>Đăng ký ngay
+            </a>
+        </div>
+    </section>
+</div>
+</body>
+</html>

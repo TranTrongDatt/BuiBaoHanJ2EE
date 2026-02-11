@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+    <title th:text="${post.title} + ' - MiniVerse'">Blog Post - MiniVerse</title>
+    <meta name="description" th:content="${post.excerpt}">
+</head>
+
+<body>
+<div layout:fragment="content">
+    <article class="container py-4">
+        <!-- Header -->
+        <header class="mb-5">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/blog}">Blog</a></li>
+                    <li class="breadcrumb-item active" th:text="${post.title}">Post Title</li>
+                </ol>
+            </nav>
+            
+            <!-- Tags -->
+            <div class="mb-3">
+                <a th:each="tag : ${post.tags}" th:href="@{/blog(tag=${tag})}"
+                   class="badge bg-primary text-decoration-none me-1" th:text="${tag}">Tag</a>
+            </div>
+            
+            <h1 class="display-5 fw-bold" th:text="${post.title}">Post Title</h1>
+            
+            <!-- Meta -->
+            <div class="d-flex flex-wrap align-items-center gap-3 text-muted mt-3">
+                <div class="d-flex align-items-center">
+                    <img th:src="${post.author.avatarUrl ?: '/images/default-avatar.png'}" 
+                         class="rounded-circle me-2" alt="" style="width: 40px; height: 40px;">
+                    <div>
+                        <a th:href="@{/blog/author/{username}(username=${post.author.username})}"
+                           class="text-decoration-none fw-medium" th:text="${post.author.fullName ?: post.author.username}">Author Name</a>
+                        <br>
+                        <small th:text="${#temporals.format(post.createdAt, 'MMMM dd, yyyy')}">January 1, 2024</small>
+                    </div>
+                </div>
+                <div class="ms-auto d-flex gap-3">
+                    <span><i class="bi bi-eye me-1"></i><span th:text="${post.viewCount}">0</span> views</span>
+                    <span><i class="bi bi-chat me-1"></i><span th:text="${#lists.size(comments)}">0</span> comments</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Featured Image -->
+        <div th:if="${post.thumbnail}" class="mb-5">
+            <img th:src="${post.thumbnail}" alt="" class="img-fluid rounded-3 w-100" style="max-height: 500px; object-fit: cover;">
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Content -->
+                <div class="article-content mb-5" th:utext="${post.content}">
+                    Post content goes here...
+                </div>
+                
+                <!-- Related Book -->
+                <div th:if="${post.book}" class="card bg-light mb-5">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-book me-2"></i>Related Book</h6>
+                        <div class="d-flex gap-3">
+                            <img th:src="${post.book.imageUrl}" alt="" class="rounded" style="width: 80px; height: 120px; object-fit: cover;">
+                            <div>
+                                <h5 th:text="${post.book.title}">Book Title</h5>
+                                <p class="text-muted mb-2" th:text="${post.book.author?.name}">Author</p>
+                                <a th:href="@{/book/{id}(id=${post.book.id})}" class="btn btn-sm btn-outline-primary">View Book</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Like & Share -->
+                <div class="d-flex justify-content-between align-items-center border-top border-bottom py-3 mb-5">
+                    <div class="d-flex gap-3">
+                        <button id="likeBtn" class="btn" 
+                                th:class="'btn ' + (${hasLiked} ? 'btn-danger' : 'btn-outline-danger')"
+                                th:data-post-id="${post.id}">
+                            <i class="bi" th:class="'bi ' + (${hasLiked} ? 'bi-heart-fill' : 'bi-heart')"></i>
+                            <span id="likeCount" th:text="${post.likeCount}">0</span>
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#shareModal">
+                            <i class="bi bi-share me-1"></i>Share
+                        </button>
+                    </div>
+                    
+                    <div sec:authorize="isAuthenticated()">
+                        <div th:if="${post.author.username == #authentication.name}" class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-gear"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" th:href="@{/blog/{slug}/edit(slug=${post.slug})}">
+                                    <i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form th:action="@{/blog/{slug}/delete(slug=${post.slug})}" method="post" 
+                                          onsubmit="return confirm('Delete this post?')">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comments -->
+                <section class="mb-5">
+                    <h5 class="mb-4"><i class="bi bi-chat-dots me-2"></i>Comments (<span th:text="${#lists.size(comments)}">0</span>)</h5>
+                    
+                    <!-- Comment Form -->
+                    <div sec:authorize="isAuthenticated()" class="card mb-4">
+                        <div class="card-body">
+                            <form id="commentForm" th:action="@{/api/comments/post/{id}(id=${post.id})}" method="post">
+                                <div class="mb-3">
+                                    <textarea name="content" class="form-control" rows="3" 
+                                              placeholder="Write a comment..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Post Comment</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                        <a th:href="@{/login}">Login</a> to leave a comment.
+                    </div>
+                    
+                    <!-- Comments List -->
+                    <div id="commentsList">
+                        <div th:each="comment : ${comments}" class="d-flex gap-3 mb-3">
+                            <img th:src="${comment.user.avatarUrl ?: '/images/default-avatar.png'}" 
+                                 class="rounded-circle" alt="" style="width: 40px; height: 40px;">
+                            <div class="flex-grow-1">
+                                <div class="bg-light rounded p-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <strong th:text="${comment.user.username}">Username</strong>
+                                        <small class="text-muted" th:text="${#temporals.format(comment.createdAt, 'MMM dd, yyyy')}">Jan 1</small>
+                                    </div>
+                                    <p class="mb-0 mt-2" th:text="${comment.content}">Comment text...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p th:if="${comments.isEmpty()}" class="text-muted text-center py-3">
+                            No comments yet. Be the first to comment!
+                        </p>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Author Info -->
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <img th:src="${post.author.avatarUrl ?: '/images/default-avatar.png'}" 
+                             class="rounded-circle mb-3" alt="" style="width: 80px; height: 80px;">
+                        <h5 th:text="${post.author.fullName ?: post.author.username}">Author Name</h5>
+                        <p class="text-muted small" th:text="${post.author.bio ?: 'No bio available'}">Author bio...</p>
+                        <a th:href="@{/blog/author/{username}(username=${post.author.username})}" 
+                           class="btn btn-outline-primary btn-sm">View Profile</a>
+                    </div>
+                </div>
+                
+                <!-- Related Posts -->
+                <div th:if="${relatedPosts != null and !relatedPosts.isEmpty()}" class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Related Posts</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a th:each="related : ${relatedPosts}" 
+                           th:href="@{/blog/{slug}(slug=${related.slug})}"
+                           class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                            <img th:src="${related.thumbnail ?: '/images/blog-default.jpg'}" 
+                                 class="rounded" alt="" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-1 small" th:text="${related.title}">Post Title</h6>
+                                <small class="text-muted" th:text="${#temporals.format(related.createdAt, 'MMM dd')}">Jan 1</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </article>
+    
+    <!-- Share Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Share this post</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center gap-3 mb-3">
+                        <a th:href="'https://www.facebook.com/sharer/sharer.php?u=' + ${#httpServletRequest.requestURL}" 
+                           target="_blank" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a th:href="'https://twitter.com/intent/tweet?url=' + ${#httpServletRequest.requestURL}" 
+                           target="_blank" class="btn btn-outline-info btn-lg">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a th:href="'https://www.linkedin.com/shareArticle?url=' + ${#httpServletRequest.requestURL}" 
+                           target="_blank" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" th:value="${#httpServletRequest.requestURL}" id="shareUrl" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyUrl()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+function copyUrl() {
+    const input = document.getElementById('shareUrl');
+    input.select();
+    document.execCommand('copy');
+    alert('Link copied!');
+}
+
+document.getElementById('likeBtn')?.addEventListener('click', async function() {
+    const postId = this.dataset.postId;
+    try {
+        const response = await fetch(`/api/likes/post/${postId}`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            this.classList.toggle('btn-danger');
+            this.classList.toggle('btn-outline-danger');
+            this.querySelector('i').classList.toggle('bi-heart');
+            this.querySelector('i').classList.toggle('bi-heart-fill');
+            document.getElementById('likeCount').textContent = data.data.likeCount;
+        }
+    } catch (e) {
+        console.error('Error toggling like:', e);
+    }
+});
+</script>
+
+<style layout:fragment="styles">
+.article-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+.article-content p {
+    margin-bottom: 1.5rem;
+}
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+.article-content h2, .article-content h3, .article-content h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+.article-content blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #6c757d;
+}
+</style>
+</body>
+</html>

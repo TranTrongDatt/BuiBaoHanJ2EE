@@ -10,7 +10,8 @@
   </head>
   <body>
     <th:block th:replace="~{layout::header}"></th:block>
-    <div class="container">
+    <div class="header-spacer"></div>
+    <div class="container page-content">
       <h1>Edit Book</h1>
       <form th:action="@{/books/edit}" th:object="${book}" method="post">
         <input type="hidden" th:field="*{id}" />
@@ -21,7 +22,14 @@
             type="text"
             th:field="*{title}"
             id="title"
+            required
+            autofocus
           />
+          <span
+            class="text-danger"
+            th:if="${#fields.hasErrors('title')}"
+            th:errors="*{title}"
+          ></span>
         </div>
         <div class="col-6 mb-3">
           <label class="form-label" for="author">Author:</label>
@@ -31,6 +39,11 @@
             th:field="*{author}"
             id="author"
           />
+          <span
+            class="text-danger"
+            th:if="${#fields.hasErrors('author')}"
+            th:errors="*{author}"
+          ></span>
         </div>
         <div class="col-6 mb-3">
           <label class="form-label" for="price">Price:</label>
@@ -40,15 +53,25 @@
             th:field="*{price}"
             id="price"
           />
+          <span
+            class="text-danger"
+            th:if="${#fields.hasErrors('price')}"
+            th:errors="*{price}"
+          ></span>
         </div>
         <div class="col-6 mb-3">
-          <label class="form-label" for="category">Category:</label>
-          <input
-            class="form-control"
-            type="text"
-            th:field="*{category}"
-            id="category"
-          />
+          <label class="form-label" for="category">Category:</label
+          ><span class="text-danger">*</span>
+          <select class="form-control" id="category" name="category.id">
+            <option value="">-- Select Category --</option>
+            <option
+              th:each="category : ${categories}"
+              th:value="${category.getId()}"
+              th:text="${category.getName()}"
+              th:selected="${category.getId() ==
+book.category.getId()}"
+            ></option>
+          </select>
         </div>
         <input type="submit" value="Save" />
       </form>

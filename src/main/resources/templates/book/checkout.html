@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Thanh toán - MiniVerse</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <th:block th:replace="~{layout::custom-css}"></th:block>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+    <style>
+        .checkout-container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+        .section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.5rem; overflow: hidden; }
+        .section-header { background: #f8fafc; padding: 1rem 1.5rem; font-weight: 700; font-size: 1.05rem; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 0.5rem; }
+        .section-body { padding: 1.5rem; }
+        .form-label { font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+        .form-control:focus, .form-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .checkout-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; }
+        .checkout-item:last-child { border-bottom: none; }
+        .checkout-item-img { width: 60px; height: 75px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+        .checkout-item-info { flex: 1; min-width: 0; }
+        .checkout-item-name { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .checkout-item-meta { font-size: 0.85rem; color: #6b7280; }
+        .checkout-item-price { font-weight: 700; color: #dc2626; white-space: nowrap; }
+        .payment-option { border: 2px solid #e5e7eb; border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 0.75rem; }
+        .payment-option:hover { border-color: #a5b4fc; }
+        .payment-option.selected { border-color: #6366f1; background: #f0f0ff; }
+        .payment-icon { font-size: 1.3rem; width: 30px; text-align: center; }
+        .summary-card { position: sticky; top: 100px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-radius: 12px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .summary-total { font-size: 1.3rem; font-weight: 800; color: #6366f1; }
+        .shipping-fee { font-weight: 700; color: #dc2626; }
+        .btn-checkout { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; padding: 0.9rem; transition: 0.3s; }
+        .btn-checkout:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); color: #fff; }
+        .header-spacer { height: 80px; }
+        /* Address Tab Styles */
+        #addressTabs .nav-link { border-radius: 8px; font-weight: 600; font-size: 0.92rem; color: #6b7280; border: 2px solid transparent; padding: 0.5rem 1.2rem; transition: all 0.2s; }
+        #addressTabs .nav-link.active { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
+        #addressTabs .nav-link:not(.active):hover { background: #f3f4f6; color: #4f46e5; }
+        #checkoutMap { transition: opacity 0.3s; }
+        .map-search-item { cursor: pointer; padding: 0.5rem 0.75rem; font-size: 0.9rem; border-left: 3px solid transparent; }
+        .map-search-item:hover { background: #f0f0ff; border-left-color: #6366f1; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout::header}"></th:block>
+<div class="header-spacer"></div>
+
+<div class="checkout-container">
+    <h2 class="mb-4"><i class="bi bi-credit-card me-2"></i>Thanh toán đơn hàng</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form th:action="@{/cart/checkout}" method="post" id="checkoutForm">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="shippingFee" id="shippingFeeInput" value="25000"/>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- 1. Thong tin nguoi nhan -->
+                <div class="section-card">
+                    <div class="section-header"><i class="bi bi-person-fill"></i> Thông tin người nhận</div>
+                    <div class="section-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Họ và tên *</label>
+                                <input type="text" name="receiverName" class="form-control" required
+                                       th:value="${userName}" placeholder="Nguyễn Văn A">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại *</label>
+                                <input type="tel" name="receiverPhone" class="form-control" required
+                                       th:value="${userPhone}" placeholder="0912 345 678"
+                                       pattern="[0-9]{10,11}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="receiverEmail" class="form-control"
+                                       th:value="${userEmail}" placeholder="email@example.com">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Dia chi giao hang -->
+                <div class="section-card">
+                    <div class="section-header"><i class="bi bi-geo-alt-fill"></i> Địa chỉ giao hàng</div>
+                    <div class="section-body">
+                        <!-- Tab chuyển đổi: Thủ công / Bản đồ -->
+                        <ul class="nav nav-pills mb-3" id="addressTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="manual-tab" data-bs-toggle="pill"
+                                        data-bs-target="#manualAddress" type="button" role="tab"
+                                        aria-controls="manualAddress" aria-selected="true">
+                                    <i class="bi bi-pencil-square me-1"></i> Nhập thủ công
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="map-tab" data-bs-toggle="pill"
+                                        data-bs-target="#mapAddress" type="button" role="tab"
+                                        aria-controls="mapAddress" aria-selected="false">
+                                    <i class="bi bi-map me-1"></i> Chọn từ bản đồ
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="addressTabContent">
+                            <!-- ===== TAB 1: Nhập thủ công ===== -->
+                            <div class="tab-pane fade show active" id="manualAddress" role="tabpanel" aria-labelledby="manual-tab">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Tỉnh/Thành phố *</label>
+                                        <select name="province" id="provinceSelect" class="form-select" required>
+                                            <option value="">-- Chọn Tỉnh/TP --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Quận/Huyện *</label>
+                                        <select name="district" id="districtSelect" class="form-select" required disabled>
+                                            <option value="">-- Chọn Quận/Huyện --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Phường/Xã *</label>
+                                        <select name="ward" id="wardSelect" class="form-select" required disabled>
+                                            <option value="">-- Chọn Phường/Xã --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Số nhà, tên đường</label>
+                                        <input type="text" name="addressDetail" id="addressDetail" class="form-control"
+                                               placeholder="VD: 123 Nguyễn Huệ">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ===== TAB 2: Chọn từ bản đồ ===== -->
+                            <div class="tab-pane fade" id="mapAddress" role="tabpanel" aria-labelledby="map-tab">
+                                <!-- Thanh tìm kiếm địa chỉ -->
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="mapSearchInput" class="form-control"
+                                           placeholder="Tìm kiếm địa chỉ (VD: 123 Nguyễn Huệ, Quận 1)">
+                                    <button type="button" class="btn btn-primary" id="mapSearchBtn">Tìm</button>
+                                </div>
+                                <!-- Bản đồ Leaflet -->
+                                <div id="checkoutMap" style="height:350px; border-radius:10px; border:2px solid #e5e7eb; z-index:1;"></div>
+                                <!-- Kết quả tìm kiếm -->
+                                <div id="mapSearchResults" class="list-group mt-2" style="max-height:150px; overflow-y:auto; display:none;"></div>
+                                <!-- Địa chỉ đã chọn -->
+                                <div id="mapSelectedAddress" class="mt-3 p-3 rounded d-none" style="background:#e8f5e9; border:1px solid #a5d6a7;">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-geo-alt-fill text-success fs-5 mt-1"></i>
+                                        <div class="flex-grow-1">
+                                            <strong>Địa chỉ đã chọn:</strong>
+                                            <p id="mapAddressText" class="mb-1" style="font-size:0.95rem;"></p>
+                                            <small class="text-muted" id="mapCoords"></small>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-success" id="confirmMapAddress">
+                                            <i class="bi bi-check-lg me-1"></i>Xác nhận
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Trạng thái đã xác nhận -->
+                                <div id="mapConfirmedBadge" class="mt-2 d-none">
+                                    <span class="badge bg-success fs-6 px-3 py-2">
+                                        <i class="bi bi-check-circle me-1"></i> Đã xác nhận địa chỉ từ bản đồ
+                                    </span>
+                                </div>
+                                <!-- Địa chỉ nhà (auto-filled from map) -->
+                                <div id="mapFullAddressWrapper" class="mt-3 d-none">
+                                    <label class="form-label"><i class="bi bi-house-door me-1"></i> Địa chỉ nhà (từ bản đồ)</label>
+                                    <input type="text" id="mapFullAddress" class="form-control" readonly
+                                           style="background: #f0f9ff; font-weight: 600; color: #1e40af;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 p-3 rounded" style="background:#fef3c7">
+                            <i class="bi bi-info-circle text-warning me-1"></i>
+                            <small><strong>Phí vận chuyển:</strong> TP. Hồ Chí Minh: <strong>25,000₫</strong> — Tỉnh khác: <strong>35,000₫</strong></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Phuong thuc thanh toan -->
+                <div class="section-card">
+                    <div class="section-header"><i class="bi bi-wallet2"></i> Phương thức thanh toán</div>
+                    <div class="section-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="payment-option selected" data-value="COD">
+                                    <input type="radio" name="paymentMethod" value="COD" class="d-none" checked>
+                                    <span class="payment-icon"><i class="bi bi-cash-coin text-success"></i></span>
+                                    <div>
+                                        <strong>Thanh toán khi nhận hàng</strong>
+                                        <div class="text-muted" style="font-size:0.82rem">Trả tiền mặt khi nhận sách</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="payment-option" data-value="BANK_TRANSFER">
+                                    <input type="radio" name="paymentMethod" value="BANK_TRANSFER" class="d-none">
+                                    <span class="payment-icon"><i class="bi bi-bank text-primary"></i></span>
+                                    <div>
+                                        <strong>Chuyển khoản ngân hàng</strong>
+                                        <div class="text-muted" style="font-size:0.82rem">Quét QR VietQR để thanh toán</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- VietQR Bank Transfer Info (hidden by default) -->
+                        <div id="vietqrInfo" class="mt-4 p-3 rounded" style="display:none; background:linear-gradient(135deg,#e0e7ff 0%,#f0f5ff 100%); border:2px solid #6366f1;">
+                            <div class="text-center mb-3">
+                                <h6 class="fw-bold text-primary mb-1"><i class="bi bi-qr-code me-2"></i>Thông tin chuyển khoản</h6>
+                                <small class="text-muted">Quét mã QR hoặc chuyển khoản theo thông tin bên dưới</small>
+                            </div>
+                            <div class="row align-items-center">
+                                <div class="col-md-5 text-center mb-3 mb-md-0">
+                                    <img id="vietqrPreviewImg" 
+                                         src="" alt="VietQR Preview" 
+                                         class="img-fluid rounded shadow-sm" style="max-height:220px; border:2px solid #fff;">
+                                    <div class="mt-2"><small class="text-muted fst-italic">Mã QR sẽ được cập nhật khi đặt hàng</small></div>
+                                </div>
+                                <div class="col-md-7">
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td class="text-muted" style="width:40%">Ngân hàng:</td>
+                                            <td class="fw-bold">ACB - Á Châu</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Số tài khoản:</td>
+                                            <td class="fw-bold">22653537</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Chủ tài khoản:</td>
+                                            <td class="fw-bold">MINIVERSE SHOP</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Số tiền:</td>
+                                            <td class="fw-bold text-danger" id="vietqrAmount">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Nội dung CK:</td>
+                                            <td class="fw-bold text-primary" id="vietqrContent">Mã đơn hàng (tự động)</td>
+                                        </tr>
+                                    </table>
+                                    <div class="alert alert-warning mt-3 mb-0 py-2 px-3" style="font-size:0.85rem;">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        <strong>Lưu ý:</strong> Đơn hàng sẽ tự động hủy sau <strong>30 phút</strong> nếu chưa thanh toán.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Ghi chu -->
+                <div class="section-card">
+                    <div class="section-header"><i class="bi bi-chat-left-text"></i> Ghi chú</div>
+                    <div class="section-body">
+                        <textarea name="notes" class="form-control" rows="3"
+                                  placeholder="Ghi chú cho đơn hàng (yêu cầu đặc biệt, thời gian nhận hàng...)"></textarea>
+                    </div>
+                </div>
+
+                <!-- 5. San pham -->
+                <div class="section-card">
+                    <div class="section-header"><i class="bi bi-box-seam"></i> Sản phẩm đặt mua (<span th:text="${totalQuantity}">0</span>)</div>
+                    <div class="section-body p-0 px-3">
+                        <div th:each="item : ${cartItems}" class="checkout-item">
+                            <img th:src="@{${item.book.coverImage != null ? item.book.coverImage : '/images/banner/hero-books.png'}}"
+                                 th:alt="${item.book.title}"
+                                 onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
+                                 class="checkout-item-img">
+                            <div class="checkout-item-info">
+                                <div class="checkout-item-name" th:text="${item.book.title}">Tên sách</div>
+                                <div class="checkout-item-meta">
+                                    <span th:text="${#numbers.formatDecimal(item.book.price, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                                    × <span th:text="${item.quantity}">1</span>
+                                </div>
+                            </div>
+                            <div class="checkout-item-price">
+                                <span th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="/cart" class="btn btn-outline-secondary mb-4">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại giỏ hàng
+                </a>
+            </div>
+
+            <!-- RIGHT: Summary -->
+            <div class="col-lg-4">
+                <div class="card summary-card">
+                    <div class="card-header bg-dark text-white" style="border-radius:12px 12px 0 0">
+                        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Tóm tắt đơn hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="summary-row">
+                            <span>Tạm tính (<span th:text="${totalQuantity}">0</span> SP):</span>
+                            <span><span id="subtotalDisplay" th:text="${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'NONE')}">0</span>₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Phí vận chuyển:</span>
+                            <span class="shipping-fee" id="shippingFeeDisplay">25,000₫</span>
+                        </div>
+                        <hr>
+                        <div class="summary-row">
+                            <span class="fw-bold">Tổng cộng:</span>
+                            <span class="summary-total" id="totalDisplay">0₫</span>
+                        </div>
+                        <button type="submit" class="btn btn-checkout w-100 mt-3">
+                            <i class="bi bi-check-circle me-2"></i>Đặt hàng
+                        </button>
+                        <div class="text-center mt-3">
+                            <small class="text-muted"><i class="bi bi-shield-check me-1"></i>Thanh toán an toàn & bảo mật</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<th:block th:replace="~{layout::footer}"></th:block>
+
+<!-- Bootstrap Bundle JS (needed for tabs) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<!-- Leaflet JS -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
+<script th:inline="javascript">
+(function(){
+    var subtotal = /*[[${totalPrice}]]*/ 0;
+    var currentShippingFee = 25000;
+    var mapInitialized = false;
+    var map, marker;
+    var mapAddressConfirmed = false; // track if user confirmed map address
+
+    function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+    // Clean Nominatim address - remove sub-city levels like "Thành phố Thủ Đức"
+    function cleanAddressText(text) {
+        text = text.replace(/,\s*Thành phố Thủ Đức/gi, '');
+        text = text.replace(/,\s*TP\.?\s*Thủ Đức/gi, '');
+        // Remove postal codes (5-6 digit numbers)
+        text = text.replace(/,\s*\d{5,6}(?=\s*,|\s*$)/g, '');
+        // Clean up double commas, leading/trailing commas
+        text = text.replace(/,\s*,/g, ',');
+        text = text.replace(/^\s*,\s*/, '');
+        text = text.replace(/\s*,\s*$/, '');
+        return text.trim();
+    }
+
+    function updateSummary() {
+        document.getElementById('shippingFeeDisplay').textContent = fmt(currentShippingFee) + '₫';
+        document.getElementById('shippingFeeInput').value = currentShippingFee;
+        document.getElementById('totalDisplay').textContent = fmt(subtotal + currentShippingFee) + '₫';
+    }
+
+    // =============================================
+    // TAB 1: Province/District/Ward cascade (manual)
+    // =============================================
+    var API = 'https://provinces.open-api.vn/api';
+
+    fetch(API + '/p/')
+        .then(function(r){ return r.json(); })
+        .then(function(provinces){
+            var sel = document.getElementById('provinceSelect');
+            provinces.forEach(function(p){
+                var opt = document.createElement('option');
+                opt.value = p.name;
+                opt.textContent = p.name;
+                opt.dataset.code = p.code;
+                sel.appendChild(opt);
+            });
+        });
+
+    document.getElementById('provinceSelect').addEventListener('change', function(){
+        var opt = this.options[this.selectedIndex];
+        var code = opt.dataset ? opt.dataset.code : '';
+        var dSel = document.getElementById('districtSelect');
+        var wSel = document.getElementById('wardSelect');
+        dSel.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+        wSel.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        wSel.disabled = true;
+        if (!code) { dSel.disabled = true; return; }
+        dSel.disabled = false;
+        var name = this.value.toLowerCase();
+        currentShippingFee = (name.indexOf('hồ chí minh') >= 0 || name.indexOf('ho chi minh') >= 0) ? 25000 : 35000;
+        updateSummary();
+        fetch(API + '/p/' + code + '?depth=2')
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                data.districts.forEach(function(d){
+                    var o = document.createElement('option');
+                    o.value = d.name;
+                    o.textContent = d.name;
+                    o.dataset.code = d.code;
+                    dSel.appendChild(o);
+                });
+            });
+    });
+
+    document.getElementById('districtSelect').addEventListener('change', function(){
+        var opt = this.options[this.selectedIndex];
+        var code = opt.dataset ? opt.dataset.code : '';
+        var wSel = document.getElementById('wardSelect');
+        wSel.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        if (!code) { wSel.disabled = true; return; }
+        wSel.disabled = false;
+        fetch(API + '/d/' + code + '?depth=2')
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                data.wards.forEach(function(w){
+                    var o = document.createElement('option');
+                    o.value = w.name;
+                    o.textContent = w.name;
+                    wSel.appendChild(o);
+                });
+            });
+    });
+
+    // =============================================
+    // TAB 2: Leaflet Map (OpenStreetMap + Nominatim)
+    // =============================================
+    function initMap() {
+        if (mapInitialized) { map.invalidateSize(); return; }
+        mapInitialized = true;
+
+        // Default: TP.HCM center
+        map = L.map('checkoutMap').setView([10.8231, 106.6297], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Click on map to select location
+        map.on('click', function(e) {
+            placeMarker(e.latlng.lat, e.latlng.lng);
+            reverseGeocode(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function placeMarker(lat, lng) {
+        if (marker) { map.removeLayer(marker); }
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        marker.on('dragend', function(e) {
+            var pos = e.target.getLatLng();
+            reverseGeocode(pos.lat, pos.lng);
+        });
+        map.setView([lat, lng], 16);
+    }
+
+    function reverseGeocode(lat, lng) {
+        var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=vi';
+        fetch(url, { headers: { 'User-Agent': 'MiniVerse-Checkout/1.0' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.display_name) {
+                    showMapAddress(data.display_name, lat, lng, data.address);
+                }
+            })
+            .catch(function() {
+                showMapAddress('Lat: ' + lat.toFixed(6) + ', Lng: ' + lng.toFixed(6), lat, lng, null);
+            });
+    }
+
+    function showMapAddress(displayName, lat, lng, addressObj) {
+        mapAddressConfirmed = false;
+        document.getElementById('mapConfirmedBadge').classList.add('d-none');
+        document.getElementById('mapFullAddressWrapper').classList.add('d-none');
+        var cleanedName = cleanAddressText(displayName);
+        document.getElementById('mapAddressText').textContent = cleanedName;
+        document.getElementById('mapCoords').textContent = 'Tọa độ: ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+        document.getElementById('mapSelectedAddress').classList.remove('d-none');
+
+        // Store parsed address for form submission
+        document.getElementById('mapSelectedAddress').dataset.province = '';
+        document.getElementById('mapSelectedAddress').dataset.district = '';
+        document.getElementById('mapSelectedAddress').dataset.ward = '';
+        document.getElementById('mapSelectedAddress').dataset.detail = cleanedName;
+
+        if (addressObj) {
+            var province = addressObj.city || addressObj.state || addressObj.province || '';
+            var district = addressObj.suburb || addressObj.county || addressObj.city_district || '';
+            var ward = addressObj.quarter || addressObj.village || addressObj.neighbourhood || '';
+            var road = addressObj.road || '';
+            var houseNumber = addressObj.house_number || '';
+            var detail = (houseNumber ? houseNumber + ' ' : '') + road;
+
+            document.getElementById('mapSelectedAddress').dataset.province = province;
+            document.getElementById('mapSelectedAddress').dataset.district = district;
+            document.getElementById('mapSelectedAddress').dataset.ward = ward;
+            document.getElementById('mapSelectedAddress').dataset.detail = detail || cleanedName;
+
+            // Calculate shipping fee based on province
+            var pLower = province.toLowerCase();
+            currentShippingFee = (pLower.indexOf('hồ chí minh') >= 0 || pLower.indexOf('ho chi minh') >= 0) ? 25000 : 35000;
+            updateSummary();
+        }
+    }
+
+    // Search on map using Nominatim
+    function searchOnMap(query) {
+        if (!query) return;
+        var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', Việt Nam') + '&limit=5&addressdetails=1&accept-language=vi&countrycodes=vn';
+        var resultsDiv = document.getElementById('mapSearchResults');
+        resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-hourglass-split me-2"></i>Đang tìm kiếm...</div>';
+        resultsDiv.style.display = 'block';
+
+        fetch(url, { headers: { 'User-Agent': 'MiniVerse-Checkout/1.0' } })
+            .then(function(r) { return r.json(); })
+            .then(function(results) {
+                resultsDiv.innerHTML = '';
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy kết quả</div>';
+                    return;
+                }
+                results.forEach(function(r) {
+                    var item = document.createElement('div');
+                    item.className = 'list-group-item map-search-item';
+                    item.innerHTML = '<i class="bi bi-geo-alt me-2 text-primary"></i>' + r.display_name;
+                    item.addEventListener('click', function() {
+                        placeMarker(parseFloat(r.lat), parseFloat(r.lon));
+                        showMapAddress(r.display_name, parseFloat(r.lat), parseFloat(r.lon), r.address);
+                        resultsDiv.style.display = 'none';
+                    });
+                    resultsDiv.appendChild(item);
+                });
+            })
+            .catch(function() {
+                resultsDiv.innerHTML = '<div class="list-group-item text-danger">Lỗi kết nối. Vui lòng thử lại.</div>';
+            });
+    }
+
+    // Map search button
+    document.getElementById('mapSearchBtn').addEventListener('click', function() {
+        searchOnMap(document.getElementById('mapSearchInput').value.trim());
+    });
+    document.getElementById('mapSearchInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); searchOnMap(this.value.trim()); }
+    });
+
+    // Confirm map address -> fill into form fields
+    document.getElementById('confirmMapAddress').addEventListener('click', function() {
+        var data = document.getElementById('mapSelectedAddress').dataset;
+        var pSel = document.getElementById('provinceSelect');
+        var dSel = document.getElementById('districtSelect');
+        var wSel = document.getElementById('wardSelect');
+
+        // Show full address in the "Địa chỉ nhà" read-only field
+        var fullAddr = document.getElementById('mapAddressText').textContent;
+        document.getElementById('mapFullAddress').value = fullAddr;
+        document.getElementById('mapFullAddressWrapper').classList.remove('d-none');
+
+        // Fill address detail
+        var addrInput = document.getElementById('addressDetail');
+        if (addrInput) addrInput.value = data.detail || '';
+
+        // Try to match province in dropdown
+        for (var i = 0; i < pSel.options.length; i++) {
+            if (data.province && pSel.options[i].text.toLowerCase().indexOf(data.province.toLowerCase()) >= 0) {
+                pSel.selectedIndex = i;
+                pSel.dispatchEvent(new Event('change'));
+                break;
+            }
+        }
+
+        // Set district/ward after async fetch (with delay)
+        setTimeout(function() {
+            for (var i = 0; i < dSel.options.length; i++) {
+                if (data.district && dSel.options[i].text.toLowerCase().indexOf(data.district.toLowerCase()) >= 0) {
+                    dSel.selectedIndex = i;
+                    dSel.dispatchEvent(new Event('change'));
+                    break;
+                }
+            }
+            setTimeout(function() {
+                for (var i = 0; i < wSel.options.length; i++) {
+                    if (data.ward && wSel.options[i].text.toLowerCase().indexOf(data.ward.toLowerCase()) >= 0) {
+                        wSel.selectedIndex = i;
+                        break;
+                    }
+                }
+            }, 1200);
+        }, 1200);
+
+        mapAddressConfirmed = true;
+        document.getElementById('mapConfirmedBadge').classList.remove('d-none');
+        document.getElementById('mapSelectedAddress').classList.add('d-none');
+    });
+
+    // Initialize map when tab is shown
+    document.getElementById('map-tab').addEventListener('shown.bs.tab', function() {
+        setTimeout(function() { initMap(); }, 100);
+    });
+
+    // When switching to manual tab, enable required on selects; when on map tab, disable them
+    document.getElementById('manual-tab').addEventListener('shown.bs.tab', function() {
+        document.getElementById('provinceSelect').required = true;
+        document.getElementById('districtSelect').required = true;
+        document.getElementById('wardSelect').required = true;
+    });
+    document.getElementById('map-tab').addEventListener('shown.bs.tab', function() {
+        // Disable required on manual selects so form can submit from map
+        document.getElementById('provinceSelect').required = false;
+        document.getElementById('districtSelect').required = false;
+        document.getElementById('wardSelect').required = false;
+    });
+
+    // Payment toggle
+    document.querySelectorAll('.payment-option').forEach(function(el){
+        el.addEventListener('click', function(){
+            document.querySelectorAll('.payment-option').forEach(function(e){ e.classList.remove('selected'); });
+            this.classList.add('selected');
+            this.querySelector('input[type=radio]').checked = true;
+            // Toggle VietQR info
+            var vietqrInfo = document.getElementById('vietqrInfo');
+            var selectedPayment = this.getAttribute('data-value');
+            if (selectedPayment === 'BANK_TRANSFER') {
+                vietqrInfo.style.display = 'block';
+                updateVietQRPreview();
+            } else {
+                vietqrInfo.style.display = 'none';
+            }
+        });
+    });
+
+    function updateVietQRPreview() {
+        var total = subtotal + currentShippingFee;
+        var amountStr = fmt(total);
+        document.getElementById('vietqrAmount').textContent = amountStr + '₫';
+        // Generate preview QR
+        var qrUrl = 'https://img.vietqr.io/image/ACB-22653537-compact2.png?amount=' + Math.round(total) + '&addInfo=DH%20MiniVerse&accountName=MINIVERSE%20SHOP';
+        document.getElementById('vietqrPreviewImg').src = qrUrl;
+    }
+
+    // Form submit interceptor - ensure map tab data gets submitted correctly
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        var mapTab = document.getElementById('map-tab');
+        var isMapActive = mapTab.classList.contains('active') || mapTab.getAttribute('aria-selected') === 'true';
+
+        if (isMapActive) {
+            // Must confirm address from map before ordering
+            if (!mapAddressConfirmed) {
+                e.preventDefault();
+                alert('Vui lòng xác nhận địa chỉ từ bản đồ trước khi đặt hàng.');
+                return false;
+            }
+
+            var pSel = document.getElementById('provinceSelect');
+            var dSel = document.getElementById('districtSelect');
+            var wSel = document.getElementById('wardSelect');
+
+            // Enable all selects so they are included in form data
+            pSel.disabled = false;
+            dSel.disabled = false;
+            wSel.disabled = false;
+
+            // If selects still empty, inject Nominatim data as fallback
+            var data = document.getElementById('mapSelectedAddress').dataset;
+            if (!pSel.value && data.province) {
+                var opt = document.createElement('option');
+                opt.value = data.province;
+                opt.textContent = data.province;
+                opt.selected = true;
+                pSel.appendChild(opt);
+            }
+            if (!dSel.value && data.district) {
+                var opt = document.createElement('option');
+                opt.value = data.district;
+                opt.textContent = data.district;
+                opt.selected = true;
+                dSel.appendChild(opt);
+            }
+            if (!wSel.value && data.ward) {
+                var opt = document.createElement('option');
+                opt.value = data.ward;
+                opt.textContent = data.ward;
+                opt.selected = true;
+                wSel.appendChild(opt);
+            }
+        }
+    });
+
+    updateSummary();
+})();
+</script>
+</body>
+</html>

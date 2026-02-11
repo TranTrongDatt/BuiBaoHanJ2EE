@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Custom ###
+logs/
+*.log
+compile_*.txt
+spring-boot-output.log
+
+### Secrets ###
+application-secrets.properties
+**/application-secrets.properties
+uploads/

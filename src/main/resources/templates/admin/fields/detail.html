@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Chi tiết Lĩnh vực</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/fields}">Lĩnh vực</a></li>
+                                <li class="breadcrumb-item active" th:text="${field.name}"></li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/fields/edit/{id}(id=${field.id})}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                        </a>
+                        <a th:href="@{/admin/fields}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <!-- Field Image -->
+                        <div class="card mb-4">
+                            <div class="card-body text-center">
+                                <img th:if="${field.image != null}" 
+                                     th:src="@{${field.image}}"
+                                     alt="Field Image"
+                                     class="img-fluid rounded mb-3"
+                                     style="max-height: 250px;">
+                                <div th:unless="${field.image != null}" 
+                                     class="bg-light rounded d-flex align-items-center justify-content-center mx-auto mb-3"
+                                     style="width: 200px; height: 200px;">
+                                    <i class="bi bi-image display-1 text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Thống kê</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Số danh mục:</span>
+                                    <strong th:text="${categoryCount}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Trạng thái:</span>
+                                    <span th:if="${field.isActive}" class="badge bg-success">Hoạt động</span>
+                                    <span th:unless="${field.isActive}" class="badge bg-secondary">Ẩn</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Thứ tự:</span>
+                                    <strong th:text="${field.displayOrder}">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <!-- Field Info -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Thông tin lĩnh vực</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 150px;">ID:</td>
+                                        <td><strong th:text="${field.id}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Tên lĩnh vực:</td>
+                                        <td><strong th:text="${field.name}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Slug:</td>
+                                        <td><code th:text="${field.slug}"></code></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Mô tả:</td>
+                                        <td th:text="${field.description ?: 'Chưa có mô tả'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày tạo:</td>
+                                        <td th:text="${#temporals.format(field.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Cập nhật:</td>
+                                        <td th:text="${#temporals.format(field.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Categories in this field -->
+                        <div class="card mt-4" th:if="${field.categories != null && !field.categories.empty}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Danh mục thuộc lĩnh vực này</h6>
+                                <span class="badge bg-primary" th:text="${field.categories.size()}"></span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Tên danh mục</th>
+                                                <th>Slug</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="cat : ${field.categories}">
+                                                <td th:text="${cat.id}"></td>
+                                                <td th:text="${cat.name}"></td>
+                                                <td><code th:text="${cat.slug}"></code></td>
+                                                <td>
+                                                    <span th:if="${cat.isActive}" class="badge bg-success">Hoạt động</span>
+                                                    <span th:unless="${cat.isActive}" class="badge bg-secondary">Ẩn</span>
+                                                </td>
+                                                <td>
+                                                    <a th:href="@{/admin/categories/{id}(id=${cat.id})}" 
+                                                       class="btn btn-sm btn-outline-info">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty state for categories -->
+                        <div class="card mt-4" th:if="${field.categories == null || field.categories.empty}">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-folder2-open display-4 text-muted"></i>
+                                <p class="text-muted mt-2 mb-3">Chưa có danh mục nào thuộc lĩnh vực này</p>
+                                <a th:href="@{/admin/categories/add}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-lg me-2"></i>Thêm danh mục
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

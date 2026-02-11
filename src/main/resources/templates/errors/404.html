@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Không tìm thấy trang | MiniVerse</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <th:block th:replace="~{layout::custom-css}"></th:block>
+    <style>
+        .error-page {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #3b82f6;
+            line-height: 1;
+        }
+        .error-icon {
+            font-size: 6rem;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <th:block th:replace="~{layout::header}"></th:block>
+    
+    <div class="error-page">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-search error-icon"></i>
+                    </div>
+                    <h1 class="error-code">404</h1>
+                    <h2 class="mb-3">Không tìm thấy trang</h2>
+                    <p class="text-muted mb-4">
+                        Trang bạn đang tìm kiếm có thể đã bị xóa, đổi tên hoặc 
+                        tạm thời không khả dụng.
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="bi bi-house me-2"></i>Trang chủ
+                        </a>
+                    </div>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Bạn có thể thử:</h6>
+                            <ul class="list-unstyled text-start mb-0">
+                                <li><i class="bi bi-check2 text-success me-2"></i>Kiểm tra lại URL</li>
+                                <li><i class="bi bi-check2 text-success me-2"></i>Tìm kiếm sách bạn muốn</li>
+                                <li><i class="bi bi-check2 text-success me-2"></i>Duyệt danh mục sách</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <th:block th:replace="~{layout::footer}"></th:block>
+</body>
+</html>

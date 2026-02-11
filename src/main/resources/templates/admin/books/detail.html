@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Chi tiết Sách</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/books}">Sách</a></li>
+                                <li class="breadcrumb-item active" th:text="${book.title}"></li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a th:href="@{/books/{slug}(slug=${book.slug})}" class="btn btn-outline-info" target="_blank">
+                            <i class="bi bi-box-arrow-up-right me-2"></i>Xem trang công khai
+                        </a>
+                        <a th:href="@{/admin/books/edit/{id}(id=${book.id})}" class="btn btn-primary ms-2">
+                            <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                        </a>
+                        <a th:href="@{/admin/books}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <!-- Book Cover -->
+                        <div class="card mb-4">
+                            <div class="card-body text-center">
+                                <img th:if="${book.coverImage != null}" 
+                                     th:src="@{${book.coverImage}}"
+                                     alt="Book Cover"
+                                     class="img-fluid rounded mb-3"
+                                     style="max-height: 350px;">
+                                <div th:unless="${book.coverImage != null}" 
+                                     class="bg-light rounded d-flex align-items-center justify-content-center mx-auto mb-3"
+                                     style="width: 200px; height: 280px;">
+                                    <i class="bi bi-book display-1 text-muted"></i>
+                                </div>
+                                <h5 th:text="${book.title}"></h5>
+                                <p th:if="${book.author != null}" class="text-muted" th:text="${book.author.name}"></p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Thống kê</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Lượt xem:</span>
+                                    <strong th:text="${book.viewCount}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Đã bán:</span>
+                                    <strong th:text="${book.soldCount}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Tồn kho:</span>
+                                    <strong th:text="${book.stockQuantity}" 
+                                            th:class="${book.stockQuantity <= 5 ? 'text-danger' : ''}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Tồn thư viện:</span>
+                                    <strong th:text="${book.libraryStock}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Trạng thái:</span>
+                                    <span th:if="${book.status != null}" th:switch="${book.status.name()}">
+                                        <span th:case="'AVAILABLE'" class="badge bg-success">Có sẵn</span>
+                                        <span th:case="'OUT_OF_STOCK'" class="badge bg-danger">Hết hàng</span>
+                                        <span th:case="'DISCONTINUED'" class="badge bg-secondary">Ngừng bán</span>
+                                        <span th:case="'COMING_SOON'" class="badge bg-info">Sắp ra mắt</span>
+                                        <span th:case="*" class="badge bg-secondary" th:text="${book.status}"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Info -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Giá</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Giá bán:</span>
+                                    <strong class="text-danger" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></strong>
+                                </div>
+                                <div th:if="${book.originalPrice != null}" class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Giá gốc:</span>
+                                    <span class="text-decoration-line-through" th:text="${#numbers.formatDecimal(book.originalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                                </div>
+                                <div th:if="${book.originalPrice != null && book.originalPrice > book.price}" class="d-flex justify-content-between">
+                                    <span class="text-muted">Giảm:</span>
+                                    <span class="badge bg-danger" th:text="${'-' + #numbers.formatDecimal((book.originalPrice - book.price) * 100 / book.originalPrice, 0, 'COMMA', 0, 'POINT')} + '%'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <!-- Book Info -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Thông tin sách</h6>
+                                <span th:if="${book.isFeatured}" class="badge bg-warning text-dark">
+                                    <i class="bi bi-star-fill me-1"></i>Nổi bật
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 150px;">ID:</td>
+                                        <td><strong th:text="${book.id}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Tiêu đề:</td>
+                                        <td><strong th:text="${book.title}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Slug:</td>
+                                        <td><code th:text="${book.slug}"></code></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">ISBN:</td>
+                                        <td th:text="${book.isbn ?: '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Tác giả:</td>
+                                        <td>
+                                            <a th:if="${book.author != null}" 
+                                               th:href="@{/admin/authors/{id}(id=${book.author.id})}"
+                                               th:text="${book.author.name}"></a>
+                                            <span th:unless="${book.author != null}" class="text-muted">--</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Nhà xuất bản:</td>
+                                        <td th:text="${book.publisher != null ? book.publisher.name : '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Danh mục:</td>
+                                        <td>
+                                            <a th:if="${book.category != null}" 
+                                               th:href="@{/admin/categories/{id}(id=${book.category.id})}"
+                                               class="badge bg-info text-decoration-none"
+                                               th:text="${book.category.name}"></a>
+                                            <span th:unless="${book.category != null}" class="text-muted">--</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngôn ngữ:</td>
+                                        <td th:text="${book.language ?: '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Số trang:</td>
+                                        <td th:text="${book.pageCount ?: '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Phiên bản:</td>
+                                        <td th:text="${book.edition ?: '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày xuất bản:</td>
+                                        <td th:text="${book.publishDate != null ? #temporals.format(book.publishDate, 'dd/MM/yyyy') : '--'}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày tạo:</td>
+                                        <td th:text="${#temporals.format(book.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Cập nhật:</td>
+                                        <td th:text="${#temporals.format(book.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Mô tả</h6>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${book.description != null}" th:utext="${book.description}"></div>
+                                <p th:unless="${book.description != null}" class="text-muted mb-0">Chưa có mô tả</p>
+                            </div>
+                        </div>
+
+                        <!-- Additional Images -->
+                        <div class="card" th:if="${book.images != null && !book.images.isEmpty()}">
+                            <div class="card-header">
+                                <h6 class="mb-0">Hình ảnh bổ sung</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-3" th:each="image : ${book.imagesList}">
+                                        <img th:src="@{${image}}" 
+                                             class="img-fluid rounded" 
+                                             style="height: 100px; object-fit: cover;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

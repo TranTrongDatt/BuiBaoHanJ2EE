@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt hàng thành công - MiniVerse</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <th:block th:replace="~{layout::custom-css}"></th:block>
+    <style>
+        .confirm-container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+        .success-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border-radius: 16px; text-align: center; padding: 2.5rem 2rem; margin-bottom: 2rem; }
+        .success-banner i { font-size: 3rem; margin-bottom: 0.5rem; }
+        .section-card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.06); margin-bottom:1.5rem; overflow:hidden; }
+        .section-header { background:#f8fafc; padding:1rem 1.5rem; font-weight:700; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:0.5rem; }
+        .section-body { padding:1.5rem; }
+        .info-row { display:flex; justify-content:space-between; padding:0.45rem 0; border-bottom:1px solid #f1f5f9; }
+        .info-row:last-child { border-bottom:none; }
+        .info-label { color:#6b7280; }
+        .info-value { font-weight:600; text-align:right; }
+        .order-item { display:flex; align-items:center; gap:1rem; padding:0.75rem 0; border-bottom:1px solid #f1f5f9; }
+        .order-item:last-child { border-bottom:none; }
+        .order-item-img { width:55px; height:70px; object-fit:cover; border-radius:6px; }
+        .order-item-info { flex:1; min-width:0; }
+        .order-item-name { font-weight:600; font-size:0.95rem; }
+        .order-item-meta { font-size:0.85rem; color:#6b7280; }
+        .order-item-price { font-weight:700; color:#dc2626; white-space:nowrap; }
+        .total-row { font-size:1.2rem; font-weight:800; color:#6366f1; }
+        .status-badge { display:inline-block; padding:0.3rem 0.85rem; border-radius:20px; font-size:0.82rem; font-weight:600; }
+        .status-PENDING { background:#fef3c7; color:#92400e; }
+        .header-spacer { height:80px; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout::header}"></th:block>
+<div class="header-spacer"></div>
+
+<div class="confirm-container">
+    <!-- Success banner -->
+    <div class="success-banner">
+        <i class="bi bi-check-circle-fill"></i>
+        <h2 class="mb-2">Đặt hàng thành công!</h2>
+        <p class="mb-1">Cảm ơn bạn đã mua sắm tại MiniVerse Bookstore</p>
+        <p class="mb-0">Mã đơn hàng: <strong th:text="${order.orderCode}">ORD-xxx</strong></p>
+    </div>
+
+    <!-- Order info -->
+    <div class="section-card">
+        <div class="section-header"><i class="bi bi-receipt"></i> Thông tin đơn hàng</div>
+        <div class="section-body">
+            <div class="info-row">
+                <span class="info-label">Mã đơn hàng</span>
+                <span class="info-value" th:text="${order.orderCode}"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ngày đặt</span>
+                <span class="info-value" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Trạng thái</span>
+                <span class="info-value">
+                    <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
+                          th:text="${order.status.displayName}">Chờ xác nhận</span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Thanh toán</span>
+                <span class="info-value" th:text="${order.paymentMethod.displayName}"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receiver info -->
+    <div class="section-card">
+        <div class="section-header"><i class="bi bi-person-fill"></i> Thông tin người nhận</div>
+        <div class="section-body">
+            <div class="info-row">
+                <span class="info-label">Họ tên</span>
+                <span class="info-value" th:text="${order.receiverName}"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Số điện thoại</span>
+                <span class="info-value" th:text="${order.receiverPhone}"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Địa chỉ</span>
+                <span class="info-value" th:text="${order.shippingAddress}"></span>
+            </div>
+            <div th:if="${order.notes != null and !order.notes.isEmpty()}" class="info-row">
+                <span class="info-label">Ghi chú</span>
+                <span class="info-value" th:text="${order.notes}"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items -->
+    <div class="section-card">
+        <div class="section-header"><i class="bi bi-box-seam"></i> Sản phẩm đã đặt</div>
+        <div class="section-body">
+            <div th:each="item : ${order.items}" class="order-item">
+                <img th:src="@{${item.bookImage != null ? item.bookImage : '/images/banner/hero-books.png'}}"
+                     th:alt="${item.bookTitle}"
+                     onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
+                     class="order-item-img">
+                <div class="order-item-info">
+                    <div class="order-item-name" th:text="${item.bookTitle}">Tên sách</div>
+                    <div class="order-item-meta">
+                        <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                        × <span th:text="${item.quantity}">1</span>
+                    </div>
+                </div>
+                <div class="order-item-price">
+                    <span th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                </div>
+            </div>
+
+            <hr class="my-3">
+            <div class="info-row">
+                <span class="info-label">Tạm tính</span>
+                <span class="info-value" th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phí vận chuyển</span>
+                <span class="info-value" th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+            </div>
+            <div th:if="${order.discountAmount != null and order.discountAmount > 0}" class="info-row">
+                <span class="info-label">Giảm giá</span>
+                <span class="info-value text-success">-<span th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'NONE')}">0</span>₫</span>
+            </div>
+            <div class="info-row total-row">
+                <span>Tổng thanh toán</span>
+                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- VietQR Payment Section (for BANK_TRANSFER orders) -->
+    <div th:if="${order.paymentMethod.name() == 'BANK_TRANSFER' and order.paymentStatus.name() == 'PENDING'}" class="section-card" style="border: 2px solid #6366f1;">
+        <div class="section-header" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;">
+            <i class="bi bi-qr-code"></i> Thanh toán chuyển khoản VietQR
+        </div>
+        <div class="section-body">
+            <div class="row align-items-center">
+                <div class="col-md-5 text-center mb-3 mb-md-0">
+                    <img th:src="'https://img.vietqr.io/image/ACB-22653537-compact2.png?amount=' + ${order.totalAmount.intValue()} + '&addInfo=' + ${order.orderCode} + '&accountName=MINIVERSE%20SHOP'"
+                         alt="VietQR Code" class="img-fluid rounded shadow" style="max-height:280px; border:3px solid #e5e7eb;">
+                </div>
+                <div class="col-md-7">
+                    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-bank me-2"></i>Thông tin chuyển khoản</h5>
+                    <table class="table table-sm table-borderless mb-3">
+                        <tr>
+                            <td class="text-muted" style="width:40%">Ngân hàng:</td>
+                            <td class="fw-bold">ACB - Ngân hàng Á Châu</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Số tài khoản:</td>
+                            <td class="fw-bold">22653537</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Chủ tài khoản:</td>
+                            <td class="fw-bold">MINIVERSE SHOP</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Số tiền:</td>
+                            <td class="fw-bold text-danger fs-5" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'NONE')} + '₫'"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Nội dung CK:</td>
+                            <td class="fw-bold text-primary fs-5" th:text="${order.orderCode}"></td>
+                        </tr>
+                    </table>
+                    <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.88rem;">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Vui lòng thanh toán trong vòng <strong>30 phút</strong>. Đơn hàng sẽ tự động hủy nếu quá thời hạn.
+                    </div>
+                    <div class="alert alert-info py-2 px-3 mb-0" style="font-size:0.88rem;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Sau khi chuyển khoản thành công, admin sẽ xác nhận thanh toán và bạn sẽ nhận thông báo.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment confirmed badge for BANK_TRANSFER -->
+    <div th:if="${order.paymentMethod.name() == 'BANK_TRANSFER' and order.paymentStatus.name() == 'PAID'}" class="section-card" style="border: 2px solid #10b981;">
+        <div class="section-body text-center py-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+            <h4 class="text-success mt-2">Thanh toán đã được xác nhận!</h4>
+            <p class="text-muted mb-0">Cảm ơn bạn đã thanh toán. Đơn hàng đang được xử lý.</p>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-3 justify-content-center mt-4 mb-4">
+        <a href="/profile/orders" class="btn btn-outline-primary btn-lg">
+            <i class="bi bi-list-check me-2"></i>Xem đơn hàng của tôi
+        </a>
+        <a href="/books" class="btn btn-primary btn-lg">
+            <i class="bi bi-book me-2"></i>Tiếp tục mua sắm
+        </a>
+    </div>
+</div>
+
+<th:block th:replace="~{layout::footer}"></th:block>
+</body>
+</html>

@@ -1,62 +1,187 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initialscale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <th:block th:replace="~{layout::link-css}"></th:block>
     <th:block th:replace="~{layout::custom-css}"></th:block>
-    <title>Add Book</title>
+    <title>Thêm sách mới</title>
   </head>
   <body>
     <th:block th:replace="~{layout::header}"></th:block>
-    <div class="container">
-      <h1>Add Book</h1>
+    <div class="header-spacer"></div>
+    <div class="container page-content">
+      <h1>Thêm sách mới</h1>
+      
+      <!-- Error Messages -->
+      <div th:if="${errors != null && errors.length > 0}" class="alert alert-danger">
+        <ul class="mb-0">
+          <li th:each="error : ${errors}" th:text="${error}"></li>
+        </ul>
+      </div>
+      
       <form th:action="@{/books/add}" th:object="${book}" method="post">
-        <div class="col-6 mb-3">
-          <label class="form-label" for="id">Id:</label>
-          <input class="form-control" type="text" th:field="*{id}" id="id" />
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="title">Tên sách:<span class="text-danger">*</span></label>
+            <input
+              class="form-control"
+              type="text"
+              placeholder="Nhập tên sách"
+              th:field="*{title}"
+              id="title"
+              required
+              autofocus
+            />
+            <span
+              class="text-danger"
+              th:if="${#fields.hasErrors('title')}"
+              th:errors="*{title}"
+            ></span>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="isbn">ISBN:</label>
+            <input
+              class="form-control"
+              type="text"
+              th:field="*{isbn}"
+              id="isbn"
+              placeholder="Nhập mã ISBN"
+            />
+          </div>
         </div>
-        <div class="col-6 mb-3">
-          <label class="form-label" for="title">Title:</label>
-          <input
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="authorId">Tác giả:<span class="text-danger">*</span></label>
+            <select class="form-select" id="authorId" name="authorId" required>
+              <option value="">-- Chọn tác giả --</option>
+              <option
+                th:each="author : ${authors}"
+                th:value="${author.id}"
+                th:text="${author.name}"
+              ></option>
+            </select>
+          </div>
+          
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="publisherId">Nhà xuất bản:</label>
+            <select class="form-select" id="publisherId" name="publisherId">
+              <option value="">-- Chọn NXB --</option>
+              <option
+                th:each="publisher : ${publishers}"
+                th:value="${publisher.id}"
+                th:text="${publisher.name}"
+              ></option>
+            </select>
+          </div>
+          
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="categoryId">Danh mục:<span class="text-danger">*</span></label>
+            <select class="form-select" id="categoryId" name="categoryId" required>
+              <option value="">-- Chọn danh mục --</option>
+              <option
+                th:each="category : ${categories}"
+                th:value="${category.id}"
+                th:text="${category.name}"
+              ></option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="price">Giá:<span class="text-danger">*</span></label>
+            <input
+              class="form-control"
+              required
+              type="number"
+              th:field="*{price}"
+              id="price"
+              placeholder="Nhập giá"
+              min="0"
+              step="1000"
+            />
+            <span
+              class="text-danger"
+              th:if="${#fields.hasErrors('price')}"
+              th:errors="*{price}"
+            ></span>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="pageCount">Số trang:</label>
+            <input
+              class="form-control"
+              type="number"
+              th:field="*{pageCount}"
+              id="pageCount"
+              placeholder="Nhập số trang"
+              min="1"
+            />
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label" for="description">Mô tả:</label>
+          <textarea
             class="form-control"
-            type="text"
-            th:field="*{title}"
-            id="title"
-          />
+            id="description"
+            th:field="*{description}"
+            rows="4"
+            placeholder="Nhập mô tả sách..."
+          ></textarea>
         </div>
-        <div class="col-6 mb-3">
-          <label class="form-label" for="author">Author:</label>
-          <input
-            class="form-control"
-            type="text"
-            th:field="*{author}"
-            id="author"
-          />
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="stockQuantity">Số lượng trong kho:</label>
+            <input
+              class="form-control"
+              type="number"
+              th:field="*{stockQuantity}"
+              id="stockQuantity"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+          
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="totalQuantity">Tổng số lượng:</label>
+            <input
+              class="form-control"
+              type="number"
+              th:field="*{totalQuantity}"
+              id="totalQuantity"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+          
+          <div class="col-md-4 mb-3">
+            <label class="form-label" for="libraryStock">Số lượng thư viện:</label>
+            <input
+              class="form-control"
+              type="number"
+              th:field="*{libraryStock}"
+              id="libraryStock"
+              placeholder="0"
+              min="0"
+            />
+          </div>
         </div>
-        <div class="col-6 mb-3">
-          <label class="form-label" for="price">Price:</label>
-          <input
-            class="form-control"
-            type="text"
-            th:field="*{price}"
-            id="price"
-          />
+        
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-2"></i>Lưu sách
+          </button>
+          <a th:href="@{/books}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-2"></i>Hủy
+          </a>
         </div>
-        <div class="col-6 mb-3">
-          <label class="form-label" for="category">Category:</label>
-          <input
-            class="form-control"
-            type="text"
-            th:field="*{category}"
-            id="category"
-          />
-        </div>
-        <input type="submit" class="btn btn-primary" value="Save" />
       </form>
-      <br />
-      <a th:href="@{/books}">Back to List</a>
     </div>
     <th:block th:replace="~{layout::footer}"></th:block>
   </body>

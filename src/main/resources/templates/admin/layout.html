@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:fragment="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${pageTitle != null ? pageTitle + ' - MiniVerse Admin' : 'MiniVerse Admin'}">MiniVerse Admin</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:fragment="sidebar" class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-brand">
+                    <img th:src="@{/images/logo/logo.png}" alt="MiniVerse" class="sidebar-logo-img">
+                    <span class="sidebar-brand-text">MiniVerse</span>
+                    <span class="sidebar-brand-badge">Admin</span>
+                </a>
+                <button class="sidebar-toggle d-lg-none" onclick="toggleAdminSidebar()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="sidebar-menu">
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin}" class="sidebar-link" 
+                           th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/books}" class="sidebar-link"
+                           th:classappend="${currentPage == 'books' ? 'active' : ''}">
+                            <i class="bi bi-book"></i>
+                            <span>Sản phẩm</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/categories}" class="sidebar-link"
+                           th:classappend="${currentPage == 'categories' ? 'active' : ''}">
+                            <i class="bi bi-tags"></i>
+                            <span>Danh mục</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/fields}" class="sidebar-link"
+                           th:classappend="${currentPage == 'fields' ? 'active' : ''}">
+                            <i class="bi bi-collection"></i>
+                            <span>Lĩnh vực</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/orders}" class="sidebar-link"
+                           th:classappend="${currentPage == 'orders' ? 'active' : ''}">
+                            <i class="bi bi-cart-check"></i>
+                            <span>Đơn hàng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/users}" class="sidebar-link"
+                           th:classappend="${currentPage == 'users' ? 'active' : ''}">
+                            <i class="bi bi-people"></i>
+                            <span>Người dùng</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/library}" class="sidebar-link"
+                           th:classappend="${currentPage == 'library' ? 'active' : ''}">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span>Thư viện</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a th:href="@{/admin/reports}" class="sidebar-link"
+                           th:classappend="${currentPage == 'reports' ? 'active' : ''}">
+                            <i class="bi bi-graph-up"></i>
+                            <span>Báo cáo</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" sec:authentication="name">Admin</span>
+                        <span class="sidebar-user-role">Quản trị viên</span>
+                    </div>
+                </div>
+                <a th:href="@{/}" class="sidebar-back-btn">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Về trang chủ</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:fragment="topbar" class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="topbar-toggle d-lg-none" onclick="toggleAdminSidebar()">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="topbar-title" th:text="${pageTitle ?: 'Dashboard'}">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <span class="topbar-welcome">
+                        Xin chào, <strong sec:authentication="name">Admin</strong>
+                    </span>
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="topbar-logout-btn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="d-none d-md-inline">Đăng xuất</span>
+                        </button>
+                    </form>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <div th:fragment="content">
+                    <!-- Page content goes here -->
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Admin JS -->
+    <script>
+        // Toggle Admin Sidebar
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        // Initialize DataTables
+        $(document).ready(function() {
+            if ($('.admin-datatable').length) {
+                $('.admin-datatable').DataTable({
+                    language: {
+                        search: "Tìm kiếm:",
+                        lengthMenu: "Hiển thị _MENU_ dòng",
+                        info: "Đang hiển thị _START_ đến _END_ của _TOTAL_ dòng",
+                        infoEmpty: "Không có dữ liệu",
+                        infoFiltered: "(lọc từ _MAX_ dòng)",
+                        paginate: {
+                            first: "Đầu",
+                            last: "Cuối",
+                            next: "Sau",
+                            previous: "Trước"
+                        },
+                        zeroRecords: "Không tìm thấy kết quả",
+                        emptyTable: "Không có dữ liệu trong bảng"
+                    },
+                    responsive: true,
+                    pageLength: 10
+                });
+            }
+        });
+    </script>
+</body>
+</html>

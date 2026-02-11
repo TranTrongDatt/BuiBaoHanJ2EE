@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+    <title>Borrow Book - MiniVerse</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/library}">Library</a></li>
+                <li class="breadcrumb-item active">Borrow Book</li>
+            </ol>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book-half me-2"></i>Confirm Borrow
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Book Info -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <img th:src="${book.imageUrl}" alt="" class="img-fluid rounded shadow-sm">
+                            </div>
+                            <div class="col-md-9">
+                                <h4 th:text="${book.title}">Book Title</h4>
+                                <p class="text-muted mb-2" th:text="${book.author?.name}">Author Name</p>
+                                <p class="small text-muted mb-0" th:text="${book.isbn}">ISBN</p>
+                                
+                                <hr>
+                                
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Available</small>
+                                        <strong th:text="${book.libraryStock}" class="text-success">5</strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Borrow Period</small>
+                                        <strong>14 days</strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Extensions</small>
+                                        <strong>2 max</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Library Card Info -->
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-credit-card-2-front me-3 fs-4"></i>
+                                <div>
+                                    <strong>Using Card:</strong> <span th:text="${card.cardNumber}">LC-123456</span>
+                                    <span class="badge bg-success ms-2">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Borrow Limits -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Active Borrows</span>
+                                <span>
+                                    <strong th:text="${activeBorrows}">2</strong> / 
+                                    <span th:text="${maxBorrows}">5</span>
+                                </span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     th:style="'width: ' + ((${activeBorrows} / ${maxBorrows}) * 100) + '%'"
+                                     th:class="'progress-bar ' + (${activeBorrows >= maxBorrows} ? 'bg-danger' : 'bg-success')">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div th:if="${activeBorrows >= maxBorrows}" class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            You have reached the maximum number of books you can borrow. Please return some books first.
+                        </div>
+                        
+                        <!-- Terms -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body small">
+                                <h6><i class="bi bi-info-circle me-2"></i>Borrowing Terms</h6>
+                                <ul class="mb-0">
+                                    <li>Borrow period is 14 days from today</li>
+                                    <li>You can extend up to 2 times (7 days each)</li>
+                                    <li>Overdue fines: 5,000 VND per day</li>
+                                    <li>Lost or damaged books must be compensated</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/library}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancel
+                            </a>
+                            <form th:action="@{/library/borrow/{id}(id=${book.id})}" method="post" 
+                                  th:if="${activeBorrows < maxBorrows}" class="flex-grow-1">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-check-circle me-2"></i>Confirm Borrow
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

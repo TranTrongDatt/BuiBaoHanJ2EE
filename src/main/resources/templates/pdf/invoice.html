@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Hóa đơn - ' + ${order.orderCode}">Hóa đơn</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, 'Segoe UI', Tahoma, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+        }
+        .invoice-container {
+            max-width: 100%;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .invoice-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 20px;
+        }
+        .logo-section {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+        .logo {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 5px;
+        }
+        .store-info {
+            font-size: 9pt;
+            color: #666;
+        }
+        .invoice-title-section {
+            display: table-cell;
+            width: 50%;
+            text-align: right;
+            vertical-align: top;
+        }
+        .invoice-title {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 10px;
+        }
+        .invoice-meta {
+            font-size: 10pt;
+            color: #666;
+        }
+        .invoice-meta strong {
+            color: #333;
+        }
+        
+        /* Customer Info */
+        .customer-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .customer-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+        .section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            margin-bottom: 5px;
+        }
+        .info-label {
+            color: #666;
+            font-size: 9pt;
+        }
+        .info-value {
+            font-weight: 600;
+        }
+        
+        /* Order Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .items-table th {
+            background: #6366f1;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 10pt;
+            font-weight: 600;
+        }
+        .items-table th:first-child {
+            border-radius: 5px 0 0 0;
+        }
+        .items-table th:last-child {
+            border-radius: 0 5px 0 0;
+            text-align: right;
+        }
+        .items-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 10pt;
+        }
+        .items-table td:last-child {
+            text-align: right;
+        }
+        .items-table .text-center {
+            text-align: center;
+        }
+        .items-table .text-right {
+            text-align: right;
+        }
+        .items-table tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        /* Totals Section */
+        .totals-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .totals-spacer {
+            display: table-cell;
+            width: 50%;
+        }
+        .totals-box {
+            display: table-cell;
+            width: 50%;
+        }
+        .total-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .total-label {
+            display: table-cell;
+            width: 60%;
+            text-align: right;
+            padding-right: 15px;
+            color: #666;
+        }
+        .total-value {
+            display: table-cell;
+            width: 40%;
+            text-align: right;
+            font-weight: 600;
+        }
+        .grand-total {
+            border-top: 2px solid #6366f1;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        .grand-total .total-label {
+            font-weight: bold;
+            color: #333;
+            font-size: 12pt;
+        }
+        .grand-total .total-value {
+            font-size: 14pt;
+            color: #6366f1;
+            font-weight: bold;
+        }
+        
+        /* Payment Info */
+        .payment-section {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .payment-grid {
+            display: table;
+            width: 100%;
+        }
+        .payment-item {
+            display: table-cell;
+            width: 33.33%;
+            padding: 5px 10px;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-shipping { background: #cffafe; color: #155e75; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+        
+        /* Footer */
+        .invoice-footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #666;
+            font-size: 9pt;
+        }
+        .thank-you {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #6366f1;
+            margin-bottom: 10px;
+        }
+        
+        /* Notes */
+        .notes-section {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="logo-section">
+                <div class="logo">📚 MiniVerse</div>
+                <div class="store-info">
+                    <div th:text="${storeInfo.address}">123 Đường Sách, TP.HCM</div>
+                    <div>ĐT: <span th:text="${storeInfo.phone}">0123 456 789</span> | Email: <span th:text="${storeInfo.email}">contact@miniverse.vn</span></div>
+                    <div>Mã số thuế: <span th:text="${storeInfo.taxCode}">0123456789</span></div>
+                </div>
+            </div>
+            <div class="invoice-title-section">
+                <div class="invoice-title">HÓA ĐƠN</div>
+                <div class="invoice-meta">
+                    <div><strong>Mã đơn:</strong> <span th:text="${order.orderCode}">ORD-123</span></div>
+                    <div><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026</span></div>
+                    <div><strong>Ngày xuất:</strong> <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">10/02/2026</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customer & Shipping Info -->
+        <div class="customer-section">
+            <div class="customer-box">
+                <div class="section-title"> Thông tin khách hàng</div>
+                <div class="info-row">
+                    <span class="info-label">Họ tên:</span>
+                    <span class="info-value" th:text="${order.receiverName ?: (order.user?.fullName ?: 'N/A')}">Nguyễn Văn A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Điện thoại:</span>
+                    <span class="info-value" th:text="${order.receiverPhone ?: 'N/A'}">0123456789</span>
+                </div>
+                <div class="info-row" th:if="${order.user != null}">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value" th:text="${order.user.email}">email@example.com</span>
+                </div>
+            </div>
+            <div class="customer-box">
+                <div class="section-title"> Địa chỉ giao hàng</div>
+                <div class="info-row">
+                    <span class="info-value" th:text="${order.shippingAddress ?: 'N/A'}">123 Đường ABC, Quận 1</span>
+                </div>
+                <div class="info-row" th:if="${order.trackingNumber != null}">
+                    <span class="info-label">Mã vận đơn:</span>
+                    <span class="info-value" th:text="${order.trackingNumber}">VN12345678</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%">STT</th>
+                    <th style="width: 45%">Sản phẩm</th>
+                    <th style="width: 15%" class="text-center">SL</th>
+                    <th style="width: 17%" class="text-right">Đơn giá</th>
+                    <th style="width: 18%">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item, iter : ${order.items}">
+                    <td class="text-center" th:text="${iter.count}">1</td>
+                    <td>
+                        <div style="font-weight: 600" th:text="${item.bookTitle}">Tên sách</div>
+                        <div style="font-size: 9pt; color: #666" th:if="${item.bookIsbn != null}" th:text="'ISBN: ' + ${item.bookIsbn}">ISBN: xxx</div>
+                    </td>
+                    <td class="text-center" th:text="${item.quantity}">1</td>
+                    <td class="text-right" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'NONE')} + ' đ'">100,000 đ</td>
+                    <td class="text-right" th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'NONE')} + ' đ'">100,000 đ</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Totals -->
+        <div class="totals-section">
+            <div class="totals-spacer"></div>
+            <div class="totals-box">
+                <div class="total-row">
+                    <div class="total-label">Tạm tính:</div>
+                    <div class="total-value" th:text="${#numbers.formatDecimal(order.subtotal ?: 0, 0, 'COMMA', 0, 'NONE')} + ' đ'">100,000 đ</div>
+                </div>
+                <div class="total-row" th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                    <div class="total-label">Giảm giá:</div>
+                    <div class="total-value" style="color: #dc2626" th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'NONE')} + ' đ'">-10,000 đ</div>
+                </div>
+                <div class="total-row">
+                    <div class="total-label">Phí vận chuyển:</div>
+                    <div class="total-value" th:text="${#numbers.formatDecimal(order.shippingFee ?: 0, 0, 'COMMA', 0, 'NONE')} + ' đ'">30,000 đ</div>
+                </div>
+                <div class="total-row grand-total">
+                    <div class="total-label">TỔNG THANH TOÁN:</div>
+                    <div class="total-value" th:text="${#numbers.formatDecimal(order.totalAmount ?: 0, 0, 'COMMA', 0, 'NONE')} + ' đ'">130,000 đ</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Info -->
+        <div class="payment-section">
+            <div class="section-title" style="margin-bottom: 10px"> Thông tin thanh toán</div>
+            <div class="payment-grid">
+                <div class="payment-item">
+                    <div class="info-label">Phương thức:</div>
+                    <div class="info-value" th:text="${order.paymentMethod?.displayName ?: 'COD'}">COD</div>
+                </div>
+                <div class="payment-item">
+                    <div class="info-label">Trạng thái TT:</div>
+                    <div class="info-value" th:text="${order.paymentStatus?.name() ?: 'PENDING'}">PENDING</div>
+                </div>
+                <div class="payment-item">
+                    <div class="info-label">Trạng thái đơn:</div>
+                    <span class="status-badge" 
+                          th:classappend="'status-' + ${order.status?.name()?.toLowerCase()}"
+                          th:text="${order.status?.displayName ?: 'Chờ xử lý'}">Chờ xử lý</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes -->
+        <div class="notes-section" th:if="${order.notes != null and !order.notes.isEmpty()}">
+            <strong>📝 Ghi chú:</strong> <span th:text="${order.notes}">Ghi chú đơn hàng</span>
+        </div>
+        
+        <!-- Footer -->
+        <div class="invoice-footer">
+            <div class="thank-you"> Cảm ơn quý khách đã mua hàng tại MiniVerse!</div>
+            <div>Mọi thắc mắc xin liên hệ: <span th:text="${storeInfo.phone}">0123 456 789</span> | <span th:text="${storeInfo.email}">contact@miniverse.vn</span></div>
+            <div style="margin-top: 5px; color: #999">Hóa đơn được xuất tự động từ hệ thống MiniVerse Bookstore</div>
+        </div>
+    </div>
+</body>
+</html>

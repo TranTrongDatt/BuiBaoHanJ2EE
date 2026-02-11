@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+    <title>My Library Card - MiniVerse</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <!-- Library Card -->
+                <div th:if="${card != null}" class="card bg-gradient-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title mb-1">
+                                    <i class="bi bi-book me-2"></i>LIBRARY CARD
+                                </h5>
+                                <small class="opacity-75">MiniVerse Library</small>
+                            </div>
+                            <span th:class="'badge ' + (${card.active} ? 'bg-success' : 'bg-warning')">
+                                <span th:text="${card.active} ? 'Active' : 'Inactive'">Active</span>
+                            </span>
+                        </div>
+                        
+                        <hr class="my-3 opacity-25">
+                        
+                        <div class="mb-3">
+                            <small class="opacity-75 d-block">Card Number</small>
+                            <code class="text-white fs-5" th:text="${card.cardNumber}">LC-123456</code>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="opacity-75 d-block">Issued</small>
+                                <span th:text="${#temporals.format(card.issuedDate, 'dd/MM/yyyy')}">01/01/2024</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="opacity-75 d-block">Expires</small>
+                                <span th:text="${#temporals.format(card.expiryDate, 'dd/MM/yyyy')}">01/01/2025</span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-3 opacity-25">
+                        
+                        <div class="d-flex justify-content-between">
+                            <form th:action="@{/library/my-card/renew}" method="post" th:if="${!card.active or card.expiryDate.isBefore(T(java.time.LocalDate).now().plusMonths(1))}">
+                                <button type="submit" class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Renew
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- No Card -->
+                <div th:if="${noCard}" class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-card-heading display-1 text-muted mb-3 d-block"></i>
+                        <h5>No Library Card</h5>
+                        <p class="text-muted">Register for a library card to borrow books</p>
+                        <form th:action="@{/library/register}" method="post">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-2"></i>Register Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Unpaid Fines Alert -->
+                <div th:if="${unpaidFines != null and !unpaidFines.isEmpty()}" class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    You have <strong th:text="${#lists.size(unpaidFines)}">0</strong> unpaid fine(s).
+                    <a th:href="@{/library/my-fines}" class="alert-link">View fines</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <!-- Active Borrows -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book-half me-2"></i>Active Borrows
+                        </h5>
+                        <span class="badge bg-primary" th:text="${activeBorrows != null} ? ${#lists.size(activeBorrows)} : '0'">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div th:if="${activeBorrows == null or activeBorrows.isEmpty()}" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                            No active borrows
+                        </div>
+                        <div th:if="${activeBorrows != null and !activeBorrows.isEmpty()}" class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Borrow Date</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="borrow : ${activeBorrows}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="${borrow.book.imageUrl}" alt="" class="me-2 rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                                                <div>
+                                                    <strong th:text="${borrow.book.title}">Book Title</strong>
+                                                    <br>
+                                                    <small class="text-muted" th:text="${borrow.book.author?.name}">Author</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td th:text="${#temporals.format(borrow.borrowDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                                        <td>
+                                            <span th:text="${#temporals.format(borrow.dueDate, 'dd/MM/yyyy')}">01/02/2024</span>
+                                            <span th:if="${borrow.dueDate.isBefore(T(java.time.LocalDate).now())}" class="badge bg-danger ms-1">Overdue</span>
+                                        </td>
+                                        <td>
+                                            <span th:class="'badge ' + (${borrow.status == 'BORROWED'} ? 'bg-primary' : 'bg-info')">
+                                                <span th:text="${borrow.status}">Borrowed</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <form th:action="@{/library/extend/{id}(id=${borrow.id})}" method="post" th:if="${borrow.extensionCount < 2}">
+                                                    <button type="submit" class="btn btn-outline-secondary" title="Extend">
+                                                        <i class="bi bi-calendar-plus"></i>
+                                                    </button>
+                                                </form>
+                                                <a th:href="@{/library/return/{id}(id=${borrow.id})}" class="btn btn-outline-primary" title="Return">
+                                                    <i class="bi bi-box-arrow-in-left"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Links -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <a th:href="@{/library}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-search display-4 text-primary mb-2"></i>
+                                <h6>Browse Books</h6>
+                                <p class="text-muted small mb-0">Find books to borrow</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a th:href="@{/library/history}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clock-history display-4 text-info mb-2"></i>
+                                <h6>Borrow History</h6>
+                                <p class="text-muted small mb-0">View past borrows</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a th:href="@{/library/my-fines}" class="card text-decoration-none h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-credit-card display-4 text-warning mb-2"></i>
+                                <h6>My Fines</h6>
+                                <p class="text-muted small mb-0">View and pay fines</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style layout:fragment="styles">
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+</body>
+</html>

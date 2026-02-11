@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bookstore</title>
+    <!-- reCAPTCHA v2 API -->
+    <script th:if="${recaptchaEnabled}" src="https://www.google.com/recaptcha/api.js?hl=vi" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-google {
+            background: white;
+            color: #444;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            text-decoration: none;
+        }
+
+        .btn-google:hover {
+            background: #f8f8f8;
+            transform: translateY(-2px);
+        }
+
+        .btn-google svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider span {
+            padding: 0 10px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ========== SLIDER CAPTCHA STYLES ========== */
+        .slider-captcha-container {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .slider-captcha-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .slider-captcha-title i {
+            color: #667eea;
+        }
+        .slider-captcha-image-container {
+            position: relative;
+            width: 300px;
+            height: 150px;
+            margin: 0 auto 10px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .slider-captcha-bg {
+            width: 100%;
+            height: 100%;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .slider-captcha-puzzle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            left: 0;
+            top: 50px; /* Center vertically in 150px height: (150-50)/2 = 50 */
+            user-select: none;
+            -webkit-user-drag: none;
+            cursor: grab;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+        .slider-captcha-puzzle:active {
+            cursor: grabbing;
+        }
+        .slider-track {
+            width: 300px;
+            height: 40px;
+            margin: 0 auto;
+            background: linear-gradient(90deg, #e0e0e0, #f5f5f5);
+            border-radius: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .slider-thumb {
+            width: 50px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 18px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: box-shadow 0.2s;
+            user-select: none;
+            position: absolute;
+            left: 2px;
+        }
+        .slider-thumb:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+        .slider-thumb:active {
+            cursor: grabbing;
+        }
+        .slider-hint {
+            position: absolute;
+            left: 60px;
+            color: #999;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .slider-captcha-status {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 13px;
+            min-height: 20px;
+        }
+        .slider-captcha-status.success {
+            color: #28a745;
+        }
+        .slider-captcha-status.error {
+            color: #dc3545;
+        }
+        .slider-captcha-refresh {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+        .slider-captcha-refresh:hover {
+            text-decoration: underline;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .remember-me label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Sign in to Bookstore</p>
+
+        <!-- Hiển thị lỗi CAPTCHA -->
+        <div th:if="${param.captchaError}" class="alert alert-error">
+            Vui lòng xác thực CAPTCHA trước khi đăng nhập.
+        </div>
+
+        <!-- Hiển thị lỗi tài khoản bị khóa/cấm -->
+        <div th:if="${param.locked}" class="alert alert-error">
+            Tài khoản của bạn đã bị khóa hoặc cấm. Vui lòng liên hệ admin.
+        </div>
+
+        <!-- Hiển thị lỗi đăng nhập -->
+        <div th:if="${param.error}" class="alert alert-error">
+            Sai tên đăng nhập hoặc mật khẩu.
+        </div>
+
+        <!-- Hiển thị thông báo đăng ký thành công -->
+        <div th:if="${param.registered}" class="alert alert-success">
+            Đăng ký thành công! Hãy đăng nhập.
+        </div>
+
+        <!-- Hiển thị thông báo đăng xuất -->
+        <div th:if="${param.logout}" class="alert alert-success">
+            Bạn đã đăng xuất thành công.
+        </div>
+
+        <!-- Nút đăng nhập bằng Google -->
+        <a href="/oauth2/authorization/google" class="btn btn-google">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            Login with Google
+        </a>
+
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg class="eye-closed" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="remember-me">
+                <input type="checkbox" id="remember-me" name="remember-me">
+                <label for="remember-me">Nhớ đăng nhập</label>
+            </div>
+
+            <!-- Slider Captcha (GenZ Style) -->
+            <div class="slider-captcha-container" id="sliderCaptchaContainer">
+                <div class="slider-captcha-title">
+                    <span>🧩</span> Kéo mảnh ghép vào đúng vị trí
+                    <button type="button" class="slider-captcha-refresh" onclick="loadSliderCaptcha()">🔄 Làm mới</button>
+                </div>
+                <div class="slider-captcha-image-container">
+                    <img class="slider-captcha-bg" id="captchaBg" src="" alt="Captcha Background">
+                    <img class="slider-captcha-puzzle" id="captchaPuzzle" src="" alt="Puzzle Piece">
+                </div>
+                <div class="slider-track" id="sliderTrack">
+                    <div class="slider-thumb" id="sliderThumb">→</div>
+                    <span class="slider-hint" id="sliderHint">Kéo sang phải →</span>
+                </div>
+                <div class="slider-captcha-status" id="sliderStatus"></div>
+                <input type="hidden" id="sliderToken" name="sliderToken" value="">
+                <input type="hidden" id="sliderVerified" name="sliderVerified" value="false">
+            </div>
+
+            <!-- reCAPTCHA v2 Checkbox -->
+            <div th:if="${recaptchaEnabled}" class="form-group" style="margin-bottom: 20px; display: flex; justify-content: center;">
+                <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}"></div>
+            </div>
+
+            <button type="submit" class="btn">Đăng nhập</button>
+        </form>
+
+        <div class="register-link">
+            Don't have an account? <a th:href="@{/register}">Sign up</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const eyeOpen = document.querySelector('.eye-open');
+            const eyeClosed = document.querySelector('.eye-closed');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.style.display = 'none';
+                eyeClosed.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeOpen.style.display = 'block';
+                eyeClosed.style.display = 'none';
+            }
+        }
+
+        // ===== SLIDER CAPTCHA =====
+        let sliderToken = '';
+        let puzzleTargetX = 0;
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        let sliderVerified = false;
+
+        // Load slider captcha khi trang ready
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSliderCaptcha();
+        });
+
+        function loadSliderCaptcha() {
+            const status = document.getElementById('sliderStatus');
+            status.textContent = 'Đang tải...';
+            status.className = 'slider-captcha-status';
+            sliderVerified = false;
+            document.getElementById('sliderVerified').value = 'false';
+            
+            // Reset puzzle position
+            const puzzle = document.getElementById('captchaPuzzle');
+            if (puzzle) {
+                puzzle.style.left = '0px';
+            }
+            
+            // Reset thumb position
+            const thumb = document.getElementById('sliderThumb');
+            if (thumb) {
+                thumb.style.left = '0px';
+            }
+            
+            // Show hint
+            const hint = document.getElementById('sliderHint');
+            if (hint) {
+                hint.style.display = 'block';
+            }
+
+            fetch('/api/captcha/slider')
+                .then(response => response.json())
+                .then(resp => {
+                    if (resp.success && resp.data) {
+                        sliderToken = resp.data.token;
+                        document.getElementById('sliderToken').value = resp.data.token;
+                        document.getElementById('captchaBg').src = resp.data.backgroundImage;
+                        document.getElementById('captchaPuzzle').src = resp.data.puzzleImage;
+                        status.textContent = '';
+                        initSliderDrag();
+                    } else {
+                        status.textContent = 'Lỗi tải captcha';
+                        status.className = 'slider-captcha-status error';
+                    }
+                })
+                .catch(err => {
+                    console.error('Slider captcha error:', err);
+                    status.textContent = 'Không thể tải captcha';
+                    status.className = 'slider-captcha-status error';
+                });
+        }
+
+        function initSliderDrag() {
+            const thumb = document.getElementById('sliderThumb');
+            const track = document.getElementById('sliderTrack');
+            const puzzle = document.getElementById('captchaPuzzle');
+            const hint = document.getElementById('sliderHint');
+            const maxTrackX = track.offsetWidth - thumb.offsetWidth;
+
+            // Mouse events
+            thumb.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+
+            // Touch events
+            thumb.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', endDrag);
+
+            function startDrag(e) {
+                if (sliderVerified) return;
+                isDragging = true;
+                startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                currentX = thumb.offsetLeft;
+                thumb.style.cursor = 'grabbing';
+                hint.style.display = 'none';
+                e.preventDefault();
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                let deltaX = clientX - startX;
+                let newX = currentX + deltaX;
+
+                // Giới hạn trong track
+                newX = Math.max(0, Math.min(newX, maxTrackX));
+
+                thumb.style.left = newX + 'px';
+                
+                // Di chuyển puzzle theo tỉ lệ
+                const puzzleMaxX = 250; // 300px - 50px puzzle width
+                const puzzleX = (newX / maxTrackX) * puzzleMaxX;
+                puzzle.style.left = puzzleX + 'px';
+            }
+
+            function endDrag(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                thumb.style.cursor = 'grab';
+
+                // Lấy vị trí cuối cùng của puzzle
+                const puzzleLeft = parseInt(puzzle.style.left || '0');
+                
+                // Gửi verify
+                verifyCaptcha(puzzleLeft);
+            }
+        }
+
+        function verifyCaptcha(positionX) {
+            const status = document.getElementById('sliderStatus');
+            status.textContent = 'Đang xác minh...';
+            status.className = 'slider-captcha-status';
+
+            fetch('/api/captcha/slider/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: sliderToken,
+                    positionX: positionX
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    status.textContent = '✓ Xác minh thành công!';
+                    status.className = 'slider-captcha-status success';
+                    sliderVerified = true;
+                    document.getElementById('sliderVerified').value = 'true';
+                    
+                    // Disable slider
+                    const thumb = document.getElementById('sliderThumb');
+                    thumb.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    thumb.textContent = '✓';
+                } else {
+                    status.textContent = '✗ Sai vị trí, thử lại!';
+                    status.className = 'slider-captcha-status error';
+                    // Reload new captcha after failed
+                    setTimeout(() => {
+                        loadSliderCaptcha();
+                    }, 1000);
+                }
+            })
+            .catch(err => {
+                console.error('Verify error:', err);
+                status.textContent = 'Lỗi xác minh';
+                status.className = 'slider-captcha-status error';
+            });
+        }
+
+        // Validate form trước khi submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!sliderVerified) {
+                e.preventDefault();
+                const status = document.getElementById('sliderStatus');
+                status.textContent = '⚠ Vui lòng hoàn thành captcha!';
+                status.className = 'slider-captcha-status error';
+            }
+        });
+    </script>
+</body>
+</html>

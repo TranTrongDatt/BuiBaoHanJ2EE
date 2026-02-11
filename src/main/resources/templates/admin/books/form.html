@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1" th:text="${book.id == null ? 'Thêm Sách mới' : 'Chỉnh sửa Sách'}">Thêm Sách</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/books}">Sản phẩm</a></li>
+                                <li class="breadcrumb-item active" th:text="${book.id == null ? 'Thêm mới' : 'Chỉnh sửa'}"></li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <a th:href="@{/admin/books}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Quay lại
+                    </a>
+                </div>
+
+                <!-- Error Alert -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Success Alert -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- Form Card -->
+                <form th:action="@{/admin/books/save}" 
+                      th:object="${book}" 
+                      method="post"
+                      enctype="multipart/form-data">
+                    
+                    <input type="hidden" th:field="*{id}">
+                    <input type="hidden" th:field="*{slug}">
+                    <input type="hidden" th:field="*{createdAt}">
+                    <input type="hidden" name="viewCount" th:value="${book.viewCount != null ? book.viewCount : 0}">
+                    <input type="hidden" name="soldCount" th:value="${book.soldCount != null ? book.soldCount : 0}">
+                    <input type="hidden" th:field="*{coverImage}">
+                    <input type="hidden" th:field="*{imagesJson}">
+                    
+                    <div class="row">
+                        <!-- Main Info -->
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Thông tin cơ bản</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Title -->
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">
+                                            Tên sách <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="title" 
+                                               th:field="*{title}"
+                                               th:classappend="${#fields.hasErrors('title') ? 'is-invalid' : ''}"
+                                               placeholder="Nhập tên sách"
+                                               required>
+                                        <div th:if="${#fields.hasErrors('title')}" class="invalid-feedback" th:errors="*{title}"></div>
+                                    </div>
+
+                                    <div class="row">
+                                        <!-- ISBN -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="isbn" class="form-label">ISBN</label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="isbn" 
+                                                   th:field="*{isbn}"
+                                                   placeholder="Ví dụ: 978-3-16-148410-0">
+                                        </div>
+
+                                        <!-- Page Count -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="pageCount" class="form-label">Số trang</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="pageCount" 
+                                                   th:field="*{pageCount}"
+                                                   min="1"
+                                                   placeholder="Ví dụ: 350">
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Mô tả</label>
+                                        <textarea class="form-control" 
+                                                  id="description" 
+                                                  th:field="*{description}"
+                                                  rows="5"
+                                                  placeholder="Nhập mô tả chi tiết về sách..."></textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <!-- Language -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="language" class="form-label">Ngôn ngữ</label>
+                                            <select class="form-select" id="language" th:field="*{language}">
+                                                <option value="Tiếng Việt">Tiếng Việt</option>
+                                                <option value="English">English</option>
+                                                <option value="Japanese">Japanese</option>
+                                                <option value="Korean">Korean</option>
+                                                <option value="Chinese">Chinese</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Edition -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="edition" class="form-label">Tái bản lần</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="edition" 
+                                                   th:field="*{edition}"
+                                                   min="1"
+                                                   placeholder="1">
+                                        </div>
+                                    </div>
+
+                                    <!-- Publish Date -->
+                                    <div class="mb-3">
+                                        <label for="publishDate" class="form-label">Ngày xuất bản</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="publishDate" 
+                                               name="publishDate"
+                                               th:value="${book.publishDate != null ? #temporals.format(book.publishDate, 'yyyy-MM-dd') : ''}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pricing & Stock -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Giá & Tồn kho</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Price -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="price" class="form-label">
+                                                Giá bán <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" 
+                                                       class="form-control" 
+                                                       id="price" 
+                                                       th:field="*{price}"
+                                                       th:classappend="${#fields.hasErrors('price') ? 'is-invalid' : ''}"
+                                                       min="0"
+                                                       step="1000"
+                                                       placeholder="0"
+                                                       required>
+                                                <span class="input-group-text">₫</span>
+                                                <div th:if="${#fields.hasErrors('price')}" class="invalid-feedback" th:errors="*{price}"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Original Price -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="originalPrice" class="form-label">Giá gốc</label>
+                                            <div class="input-group">
+                                                <input type="number" 
+                                                       class="form-control" 
+                                                       id="originalPrice" 
+                                                       th:field="*{originalPrice}"
+                                                       min="0"
+                                                       step="1000"
+                                                       placeholder="0">
+                                                <span class="input-group-text">₫</span>
+                                            </div>
+                                            <div class="form-text">Để trống nếu không giảm giá</div>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="status" class="form-label">Trạng thái</label>
+                                            <select class="form-select" id="status" th:field="*{status}">
+                                                <option value="AVAILABLE">Có sẵn</option>
+                                                <option value="OUT_OF_STOCK">Hết hàng</option>
+                                                <option value="DISCONTINUED">Ngừng bán</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <!-- Total Quantity -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="totalQuantity" class="form-label">Tổng số lượng</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="totalQuantity" 
+                                                   th:field="*{totalQuantity}"
+                                                   min="0"
+                                                   placeholder="0">
+                                        </div>
+
+                                        <!-- Stock Quantity -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="stockQuantity" class="form-label">Tồn kho bán</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="stockQuantity" 
+                                                   th:field="*{stockQuantity}"
+                                                   min="0"
+                                                   placeholder="0">
+                                        </div>
+
+                                        <!-- Library Stock -->
+                                        <div class="col-md-4 mb-3">
+                                            <label for="libraryStock" class="form-label">Tồn kho thư viện</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="libraryStock" 
+                                                   th:field="*{libraryStock}"
+                                                   min="0"
+                                                   placeholder="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar -->
+                        <div class="col-md-4">
+                            <!-- Cover Image -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Ảnh bìa</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <img th:if="${book.coverImage != null}" 
+                                         th:src="@{${book.coverImage}}"
+                                         alt="Cover"
+                                         id="coverPreview"
+                                         class="img-fluid rounded mb-3"
+                                         style="max-height: 250px;">
+                                    <div th:unless="${book.coverImage != null}"
+                                         id="coverPlaceholder"
+                                         class="bg-light rounded d-flex align-items-center justify-content-center mb-3 mx-auto"
+                                         style="width: 150px; height: 200px;">
+                                        <i class="bi bi-book display-4 text-muted"></i>
+                                    </div>
+                                    <input type="file" 
+                                           name="coverImageFile" 
+                                           id="coverImageFile"
+                                           class="form-control"
+                                           accept="image/*"
+                                           onchange="previewCover(this)">
+                                </div>
+                            </div>
+
+                            <!-- Category & Author -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Phân loại</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Category -->
+                                    <div class="mb-3">
+                                        <label for="category" class="form-label">Danh mục</label>
+                                        <select class="form-select" id="category" name="categoryId">
+                                            <option value="">— Chọn danh mục —</option>
+                                            <option th:each="cat : ${categories}" 
+                                                    th:value="${cat.id}" 
+                                                    th:text="${cat.name}"
+                                                    th:selected="${(submittedCategoryId != null && cat.id == submittedCategoryId) || (submittedCategoryId == null && book.category != null && cat.id == book.category.id)}"></option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Author -->
+                                    <div class="mb-3">
+                                        <label for="author" class="form-label">Tác giả <span class="text-danger">*</span></label>
+                                        <select class="form-select" 
+                                                id="author" 
+                                                name="authorId" 
+                                                th:classappend="${#fields.hasErrors('author') ? 'is-invalid' : ''}" 
+                                                required>
+                                            <option value="">— Chọn tác giả —</option>
+                                            <option th:each="a : ${authors}" 
+                                                    th:value="${a.id}" 
+                                                    th:text="${a.name}"
+                                                    th:selected="${(submittedAuthorId != null && a.id == submittedAuthorId) || (submittedAuthorId == null && book.author != null && a.id == book.author.id)}"></option>
+                                        </select>
+                                        <div th:if="${#fields.hasErrors('author')}" class="invalid-feedback" th:errors="*{author}"></div>
+                                    </div>
+
+                                    <!-- Publisher -->
+                                    <div class="mb-3">
+                                        <label for="publisher" class="form-label">Nhà xuất bản <span class="text-danger">*</span></label>
+                                        <select class="form-select" 
+                                                id="publisher" 
+                                                name="publisherId" 
+                                                th:classappend="${#fields.hasErrors('publisher') ? 'is-invalid' : ''}" 
+                                                required>
+                                            <option value="">— Chọn NXB —</option>
+                                            <option th:each="pub : ${publishers}" 
+                                                    th:value="${pub.id}" 
+                                                    th:text="${pub.name}"
+                                                    th:selected="${(submittedPublisherId != null && pub.id == submittedPublisherId) || (submittedPublisherId == null && book.publisher != null && pub.id == book.publisher.id)}"></option>
+                                        </select>
+                                        <div th:if="${#fields.hasErrors('publisher')}" class="invalid-feedback" th:errors="*{publisher}"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Options -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Tùy chọn</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check form-switch mb-2">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="isFeatured"
+                                               th:field="*{isFeatured}">
+                                        <label class="form-check-label" for="isFeatured">
+                                            <i class="bi bi-star text-warning"></i> Sản phẩm nổi bật
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    <span th:text="${book.id == null ? 'Thêm sách' : 'Cập nhật'}"></span>
+                                </button>
+                                <a th:href="@{/admin/books}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-2"></i>Hủy
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function previewCover(input) {
+            const preview = document.getElementById('coverPreview');
+            const placeholder = document.getElementById('coverPlaceholder');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (!preview) {
+                        const img = document.createElement('img');
+                        img.id = 'coverPreview';
+                        img.className = 'img-fluid rounded mb-3';
+                        img.style.maxHeight = '250px';
+                        img.src = e.target.result;
+                        if (placeholder) {
+                            placeholder.replaceWith(img);
+                        }
+                    } else {
+                        preview.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // DEBUG: Log form values before submit
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[action*="/admin/books/save"]');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const authorId = document.getElementById('author').value;
+                    const publisherId = document.getElementById('publisher').value;
+                    const categoryId = document.getElementById('category').value;
+                    
+                    console.log('=== FORM SUBMIT DEBUG ===');
+                    console.log('Author ID:', authorId, 'Type:', typeof authorId, 'Length:', authorId.length);
+                    console.log('Publisher ID:', publisherId, 'Type:', typeof publisherId, 'Length:', publisherId.length);
+                    console.log('Category ID:', categoryId, 'Type:', typeof categoryId, 'Length:', categoryId.length);
+                    console.log('Author selected text:', document.getElementById('author').options[document.getElementById('author').selectedIndex].text);
+                    console.log('Publisher selected text:', document.getElementById('publisher').options[document.getElementById('publisher').selectedIndex].text);
+                    console.log('========================');
+                    
+                    // Allow form to submit
+                });
+            }
+        });
+    </script>
+</body>
+</html>

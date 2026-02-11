@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${book.title} + ' - MiniVerse'">Chi tiết sách - MiniVerse</title>
+    <th:block th:replace="~{layout :: link-css}"></th:block>
+    <th:block th:replace="~{layout :: custom-css}"></th:block>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        
+        .book-detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        /* Gallery */
+        .product-gallery {
+            position: sticky;
+            top: 100px;
+        }
+        
+        .main-image {
+            border: 1px solid #eee;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            text-align: center;
+            padding: 20px;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .main-image img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .thumbnail-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .thumbnail-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .thumbnail-img:hover, .thumbnail-img.active {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        /* Product Info */
+        .book-info {
+            padding: 0 1.5rem;
+        }
+        
+        .book-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .book-author {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+        
+        .book-author a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .book-author a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Price Section */
+        .price-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .current-price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #dc2626;
+        }
+        
+        .original-price {
+            font-size: 1.2rem;
+            color: #9ca3af;
+            text-decoration: line-through;
+            margin-left: 0.75rem;
+        }
+        
+        .discount-badge {
+            background: #dc2626;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 0.75rem;
+        }
+        
+        /* Stock Status */
+        .stock-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .stock-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .stock-available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .stock-low {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .stock-out {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Quantity Selector */
+        .quantity-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .quantity-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .qty-control {
+            display: flex;
+            align-items: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .qty-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: #f9fafb;
+            color: #374151;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qty-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .qty-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .qty-input {
+            width: 60px;
+            height: 44px;
+            border: none;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+        
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .qty-remaining {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            align-items: stretch;
+        }
+        
+        .btn-add-cart,
+        .btn-buy-now {
+            flex: 1;
+            height: 54px;
+            padding: 0 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            color: white;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.02em;
+        }
+        
+        .btn-add-cart {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+        }
+        
+        .btn-buy-now {
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+        }
+        
+        .btn-add-cart:hover:not(:disabled),
+        .btn-buy-now:hover:not(:disabled) {
+            transform: translateY(-3px);
+        }
+        
+        .btn-add-cart:hover:not(:disabled) {
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+        }
+        
+        .btn-buy-now:hover:not(:disabled) {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45);
+        }
+        
+        .btn-add-cart:active:not(:disabled),
+        .btn-buy-now:active:not(:disabled) {
+            transform: translateY(-1px) scale(0.98);
+        }
+        
+        .btn-add-cart:disabled,
+        .btn-buy-now:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .btn-add-cart i,
+        .btn-buy-now i {
+            font-size: 1.15rem;
+        }
+        
+        .btn-wishlist {
+            width: 54px;
+            height: 54px;
+            min-width: 54px;
+            border-radius: 14px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-wishlist:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: #fef2f2;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+        }
+        
+        .btn-wishlist.active {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        /* Meta Info */
+        .book-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            padding: 1.25rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .meta-item i {
+            color: var(--primary);
+            width: 18px;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .meta-value {
+            color: #1e293b;
+        }
+        
+        /* View Stats */
+        .view-stats {
+            display: flex;
+            gap: 1.5rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .view-stats span {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        
+        /* Product Tabs */
+        .product-tabs {
+            margin-top: 3rem;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            border-color: transparent;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary);
+            background: none;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .tab-content {
+            padding: 2rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .book-description {
+            line-height: 1.8;
+            color: #374151;
+        }
+        
+        .specs-table {
+            width: 100%;
+        }
+        
+        .specs-table tr {
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .specs-table th {
+            width: 180px;
+            padding: 0.75rem 0;
+            font-weight: 600;
+            color: #64748b;
+            text-align: left;
+        }
+        
+        .specs-table td {
+            padding: 0.75rem 0;
+            color: #1e293b;
+        }
+        
+        /* Related Books */
+        .related-books {
+            margin-top: 3rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .related-book-card {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .related-book-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+        
+        .related-book-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .related-book-info {
+            padding: 1rem;
+        }
+        
+        .related-book-info h6 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .related-book-info .price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Share Section */
+        .share-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .share-section span {
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .share-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .share-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Login Prompt */
+        .login-prompt {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .login-prompt p {
+            color: #0369a1;
+            margin-bottom: 1rem;
+        }
+        
+        .login-prompt .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .book-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-add-cart,
+            .btn-buy-now {
+                height: 50px;
+                font-size: 0.95rem;
+            }
+            
+            .btn-wishlist {
+                width: 100%;
+                height: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <th:block th:replace="~{layout :: header}"></th:block>
+    <div class="header-spacer"></div>
+    
+    <div class="book-detail-container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/books}">Sách</a></li>
+                <li class="breadcrumb-item" th:if="${book.category}">
+                    <a th:href="@{/books(categoryId=${book.category.id})}" th:text="${book.category.name}">Danh mục</a>
+                </li>
+                <li class="breadcrumb-item active" th:text="${book.title}">Tên sách</li>
+            </ol>
+        </nav>
+        
+        <div class="row">
+            <!-- Book Cover Gallery -->
+            <div class="col-lg-5 mb-4">
+                <div class="product-gallery">
+                    <div class="main-image">
+                        <img th:src="@{${book.coverImage != null ? book.coverImage : '/images/banner/hero-books.png'}}" 
+                             th:alt="${book.title}" 
+                             onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
+                             id="mainProductImage">
+                    </div>
+                    
+                    <!-- Stock Status -->
+                    <div class="stock-section text-center mt-3">
+                        <span th:if="${book.stockQuantity > 10}" class="stock-badge stock-available">
+                            <i class="bi bi-check-circle-fill"></i> Còn hàng (<span th:text="${book.stockQuantity}"></span> cuốn)
+                        </span>
+                        <span th:if="${book.stockQuantity > 0 and book.stockQuantity <= 10}" class="stock-badge stock-low">
+                            <i class="bi bi-exclamation-circle-fill"></i> Sắp hết (<span th:text="${book.stockQuantity}"></span> cuốn)
+                        </span>
+                        <span th:if="${book.stockQuantity == null or book.stockQuantity <= 0}" class="stock-badge stock-out">
+                            <i class="bi bi-x-circle-fill"></i> Hết hàng
+                        </span>
+                        
+                        <span th:if="${book.libraryStock != null and book.libraryStock > 0}" class="stock-badge stock-available ms-2">
+                            <i class="bi bi-journal-bookmark-fill"></i> Có thể mượn (<span th:text="${book.libraryStock}"></span>)
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Book Info -->
+            <div class="col-lg-7">
+                <div class="book-info">
+                    <h1 class="book-title" th:text="${book.title}">Tên sách</h1>
+                    
+                    <p class="book-author" th:if="${book.author}">
+                        <i class="bi bi-person-fill me-1"></i> Tác giả: 
+                        <a href="#" th:text="${book.author.name}">Tác giả</a>
+                    </p>
+                    
+                    <!-- Price Section -->
+                    <div class="price-section">
+                        <span class="current-price" th:if="${book.price != null}" 
+                              th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                        <span th:if="${book.originalPrice != null and book.originalPrice > book.price}" 
+                              class="original-price"
+                              th:text="${#numbers.formatDecimal(book.originalPrice, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                        <span th:if="${book.originalPrice != null and book.originalPrice > book.price}" 
+                              class="discount-badge"
+                              th:text="'-' + ${#numbers.formatDecimal((book.originalPrice - book.price) / book.originalPrice * 100, 0, 'NONE', 0, 'NONE')} + '%'">-10%</span>
+                    </div>
+                    
+                    <!-- Meta Info -->
+                    <div class="book-meta">
+                        <div class="meta-item" th:if="${book.isbn}">
+                            <i class="bi bi-upc"></i>
+                            <span class="meta-label">ISBN:</span>
+                            <span class="meta-value" th:text="${book.isbn}">-</span>
+                        </div>
+                        <div class="meta-item" th:if="${book.pageCount}">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="meta-label">Số trang:</span>
+                            <span class="meta-value" th:text="${book.pageCount}">-</span>
+                        </div>
+                        <div class="meta-item" th:if="${book.publisher}">
+                            <i class="bi bi-building"></i>
+                            <span class="meta-label">NXB:</span>
+                            <span class="meta-value" th:text="${book.publisher.name}">-</span>
+                        </div>
+                        <div class="meta-item" th:if="${book.publishDate}">
+                            <i class="bi bi-calendar3"></i>
+                            <span class="meta-label">Năm XB:</span>
+                            <span class="meta-value" th:text="${#temporals.format(book.publishDate, 'yyyy')}">-</span>
+                        </div>
+                        <div class="meta-item" th:if="${book.language}">
+                            <i class="bi bi-globe"></i>
+                            <span class="meta-label">Ngôn ngữ:</span>
+                            <span class="meta-value" th:text="${book.language}">-</span>
+                        </div>
+                        <div class="meta-item" th:if="${book.category}">
+                            <i class="bi bi-bookmark"></i>
+                            <span class="meta-label">Thể loại:</span>
+                            <span class="meta-value" th:text="${book.category.name}">-</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Authenticated User Actions -->
+                    <div sec:authorize="isAuthenticated()">
+                        <!-- Quantity Selector -->
+                        <div class="quantity-section" th:if="${book.stockQuantity != null and book.stockQuantity > 0}">
+                            <label class="quantity-label">Số lượng</label>
+                            <div class="quantity-selector">
+                                <div class="qty-control">
+                                    <button type="button" class="qty-btn" id="decreaseQty">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" class="qty-input" id="productQty" value="1" min="1" 
+                                           th:max="${book.stockQuantity}">
+                                    <button type="button" class="qty-btn" id="increaseQty">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <span class="qty-remaining">Còn lại: <span th:text="${book.stockQuantity}">0</span> sản phẩm</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <button type="button" class="btn-add-cart" id="btnAddToCartAjax"
+                                    th:data-book-id="${book.id}"
+                                    th:disabled="${book.stockQuantity == null or book.stockQuantity <= 0}">
+                                <i class="bi bi-cart-plus"></i>
+                                <span>Thêm vào giỏ hàng</span>
+                            </button>
+                            
+                            <form th:action="@{/cart/buy-now}" method="post" style="flex:1; display:flex;" id="buyNowForm">
+                                <input type="hidden" name="bookId" th:value="${book.id}">
+                                <input type="hidden" name="quantity" id="buyNowQuantity" value="1">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="btn-buy-now" style="width:100%;" 
+                                        th:disabled="${book.stockQuantity == null or book.stockQuantity <= 0}">
+                                    <i class="bi bi-bag-check"></i>
+                                    <span>Mua ngay</span>
+                                </button>
+                            </form>
+                            
+                            <button class="btn-wishlist" title="Thêm vào yêu thích" id="addToWishlist"
+                                    th:data-book-id="${book.id}" sec:authorize="isAuthenticated()">
+                                <i class="bi bi-heart fs-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Guest Login Prompt -->
+                    <div class="login-prompt" sec:authorize="!isAuthenticated()">
+                        <p><i class="bi bi-info-circle me-1"></i> Đăng nhập để mua hàng hoặc mượn sách</p>
+                        <a th:href="@{/login}" class="btn">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập ngay
+                        </a>
+                    </div>
+                    
+                    <!-- View Stats -->
+                    <div class="view-stats">
+                        <span><i class="bi bi-eye"></i> <span th:text="${book.viewCount ?: 0}">0</span> lượt xem</span>
+                        <span><i class="bi bi-cart-check"></i> Đã bán <span th:text="${book.soldCount ?: 0}">0</span></span>
+                    </div>
+                    
+                    <!-- Share Section -->
+                    <div class="share-section">
+                        <span>Chia sẻ:</span>
+                        <button class="share-btn" title="Facebook"><i class="bi bi-facebook"></i></button>
+                        <button class="share-btn" title="Twitter"><i class="bi bi-twitter-x"></i></button>
+                        <button class="share-btn" title="Pinterest"><i class="bi bi-pinterest"></i></button>
+                        <button class="share-btn" title="Copy link"><i class="bi bi-link-45deg"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Tabs -->
+        <div class="product-tabs">
+            <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="description-tab" data-bs-toggle="tab" 
+                            data-bs-target="#description" type="button" role="tab">
+                        <i class="bi bi-text-paragraph me-1"></i> Mô tả sách
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="specs-tab" data-bs-toggle="tab" 
+                            data-bs-target="#specs" type="button" role="tab">
+                        <i class="bi bi-list-ul me-1"></i> Chi tiết sản phẩm
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" 
+                            data-bs-target="#reviews" type="button" role="tab">
+                        <i class="bi bi-star me-1"></i> Đánh giá
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="productTabsContent">
+                <!-- Description Tab -->
+                <div class="tab-pane fade show active" id="description" role="tabpanel">
+                    <div class="book-description" th:if="${book.description}" th:utext="${book.description}">
+                        Mô tả chi tiết về sách...
+                    </div>
+                    <p th:unless="${book.description}" class="text-muted">
+                        Chưa có mô tả cho sản phẩm này.
+                    </p>
+                </div>
+                
+                <!-- Specs Tab -->
+                <div class="tab-pane fade" id="specs" role="tabpanel">
+                    <table class="specs-table">
+                        <tbody>
+                            <tr>
+                                <th>Tên sách</th>
+                                <td th:text="${book.title}">-</td>
+                            </tr>
+                            <tr th:if="${book.author}">
+                                <th>Tác giả</th>
+                                <td th:text="${book.author.name}">-</td>
+                            </tr>
+                            <tr th:if="${book.publisher}">
+                                <th>Nhà xuất bản</th>
+                                <td th:text="${book.publisher.name}">-</td>
+                            </tr>
+                            <tr th:if="${book.isbn}">
+                                <th>ISBN</th>
+                                <td th:text="${book.isbn}">-</td>
+                            </tr>
+                            <tr th:if="${book.pageCount}">
+                                <th>Số trang</th>
+                                <td th:text="${book.pageCount}">-</td>
+                            </tr>
+                            <tr th:if="${book.publishDate}">
+                                <th>Ngày xuất bản</th>
+                                <td th:text="${#temporals.format(book.publishDate, 'dd/MM/yyyy')}">-</td>
+                            </tr>
+                            <tr th:if="${book.language}">
+                                <th>Ngôn ngữ</th>
+                                <td th:text="${book.language}">-</td>
+                            </tr>
+                            <tr th:if="${book.category}">
+                                <th>Thể loại</th>
+                                <td th:text="${book.category.name}">-</td>
+                            </tr>
+                            <tr th:if="${book.edition}">
+                                <th>Phiên bản</th>
+                                <td th:text="'Tái bản lần ' + ${book.edition}">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Reviews Tab -->
+                <div class="tab-pane fade" id="reviews" role="tabpanel">
+                    <div class="text-center py-5">
+                        <i class="bi bi-chat-square-text fs-1 text-muted mb-3 d-block"></i>
+                        <p class="text-muted mb-3">Chưa có đánh giá nào cho sản phẩm này.</p>
+                        <button class="btn btn-outline-primary" sec:authorize="isAuthenticated()">
+                            <i class="bi bi-pencil me-1"></i> Viết đánh giá đầu tiên
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Books -->
+        <div class="related-books" th:if="${relatedBooks != null and !relatedBooks.isEmpty()}">
+            <h4 class="section-title">
+                <i class="bi bi-book"></i> Sách liên quan
+            </h4>
+            <div class="row">
+                <div class="col-6 col-md-3 mb-4" th:each="related : ${relatedBooks}">
+                    <a th:href="@{/books/{slug}(slug=${related.slug})}" class="related-book-card">
+                        <img th:src="@{${related.coverImage != null ? related.coverImage : '/images/banner/hero-books.png'}}" 
+                             th:alt="${related.title}"
+                             onerror="this.onerror=null; this.src='/images/banner/hero-books.png';">
+                        <div class="related-book-info">
+                            <h6 th:text="${related.title}">Tên sách</h6>
+                            <p class="price mb-0" 
+                               th:text="${related.price != null ? #numbers.formatDecimal(related.price, 0, 'COMMA', 0, 'POINT') + '₫' : 'Liên hệ'}">0₫</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Edit Button -->
+        <div class="mt-4" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            <a th:href="@{/admin/books/edit/{id}(id=${book.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa sách
+            </a>
+        </div>
+    </div>
+    
+    <th:block th:replace="~{layout :: footer}"></th:block>
+    
+    <!-- jQuery + Bootstrap JS -->
+    <script th:src="@{/js/jquery-3.7.0.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const qtyInput = document.getElementById('productQty');
+            const buyNowQtyInput = document.getElementById('buyNowQuantity');
+            const decreaseBtn = document.getElementById('decreaseQty');
+            const increaseBtn = document.getElementById('increaseQty');
+            
+            function syncQuantity(val) {
+                if (buyNowQtyInput) buyNowQtyInput.value = val;
+            }
+            
+            if (qtyInput) {
+                const maxQty = parseInt(qtyInput.getAttribute('max')) || 99;
+                
+                // Sync quantity input with hidden form fields
+                qtyInput.addEventListener('change', function() {
+                    let val = parseInt(this.value) || 1;
+                    if (val < 1) val = 1;
+                    if (val > maxQty) val = maxQty;
+                    this.value = val;
+                    syncQuantity(val);
+                });
+                
+                // Decrease button
+                if (decreaseBtn) {
+                    decreaseBtn.addEventListener('click', function() {
+                        let val = parseInt(qtyInput.value) || 1;
+                        if (val > 1) {
+                            qtyInput.value = val - 1;
+                            syncQuantity(val - 1);
+                        }
+                    });
+                }
+                
+                // Increase button
+                if (increaseBtn) {
+                    increaseBtn.addEventListener('click', function() {
+                        let val = parseInt(qtyInput.value) || 1;
+                        if (val < maxQty) {
+                            qtyInput.value = val + 1;
+                            syncQuantity(val + 1);
+                        }
+                    });
+                }
+            }
+            
+            // AJAX Add to Cart
+            const addToCartBtn = document.getElementById('btnAddToCartAjax');
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', function() {
+                    var bookId = this.getAttribute('data-book-id');
+                    var quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                    var csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                    var csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                    var btn = this;
+                    var originalHtml = btn.innerHTML;
+                    
+                    console.log('Add to cart clicked, bookId:', bookId, 'quantity:', quantity);
+                    console.log('CSRF Token:', csrfToken, 'CSRF Header:', csrfHeader);
+                    
+                    if (!bookId) {
+                        alert('Lỗi: Không lấy được ID sách!');
+                        return;
+                    }
+                    
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>Đang thêm...</span>';
+                    
+                    $.ajax({
+                        url: '/cart/add/ajax',
+                        type: 'POST',
+                        data: { bookId: bookId, quantity: quantity },
+                        beforeSend: function(xhr) {
+                            xhr.setRequestHeader(csrfHeader, csrfToken);
+                        },
+                        success: function(data) {
+                            if (data.success) {
+                                // Update cart badge in header
+                                var $badge = $('#cartBadge');
+                                if ($badge.length) {
+                                    $badge.text(data.totalQuantity).show();
+                                } else {
+                                    $('a[href="/cart"] .bi-cart3').after(
+                                        '<span class="badge cart-badge" id="cartBadge">' + data.totalQuantity + '</span>'
+                                    );
+                                }
+                                btn.innerHTML = '<i class="bi bi-check-lg"></i> <span>Đã thêm!</span>';
+                                btn.classList.add('btn-success');
+                                setTimeout(function() {
+                                    btn.innerHTML = originalHtml;
+                                    btn.classList.remove('btn-success');
+                                    btn.disabled = false;
+                                }, 1500);
+                            } else {
+                                btn.innerHTML = originalHtml;
+                                btn.disabled = false;
+                                alert(data.message || 'Có lỗi xảy ra!');
+                            }
+                        },
+                        error: function() {
+                            btn.innerHTML = originalHtml;
+                            btn.disabled = false;
+                            alert('Không thể thêm vào giỏ hàng. Vui lòng thử lại!');
+                        }
+                    });
+                });
+            }
+            
+            // Wishlist button toggle
+            const wishlistBtn = document.getElementById('addToWishlist');
+            if (wishlistBtn) {
+                const bookIdWl = wishlistBtn.getAttribute('data-book-id');
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                let isInWishlist = false;
+
+                // Check initial wishlist state
+                if (bookIdWl) {
+                    fetch('/api/wishlist/check/' + bookIdWl, {
+                        headers: { [csrfHeader]: csrfToken }
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.data === true) {
+                            isInWishlist = true;
+                            wishlistBtn.classList.add('active');
+                            wishlistBtn.querySelector('i').classList.remove('bi-heart');
+                            wishlistBtn.querySelector('i').classList.add('bi-heart-fill');
+                        }
+                    })
+                    .catch(() => {});
+                }
+
+                wishlistBtn.addEventListener('click', function() {
+                    if (!bookIdWl) return;
+                    const icon = this.querySelector('i');
+                    
+                    if (isInWishlist) {
+                        // Remove from wishlist
+                        fetch('/api/wishlist/' + bookIdWl, {
+                            method: 'DELETE',
+                            headers: { [csrfHeader]: csrfToken }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            isInWishlist = false;
+                            wishlistBtn.classList.remove('active');
+                            icon.classList.remove('bi-heart-fill');
+                            icon.classList.add('bi-heart');
+                            showWishlistToast('Đã xóa khỏi danh sách yêu thích', 'remove');
+                        })
+                        .catch(() => alert('Có lỗi xảy ra!'));
+                    } else {
+                        // Add to wishlist
+                        fetch('/api/wishlist/' + bookIdWl, {
+                            method: 'POST',
+                            headers: { [csrfHeader]: csrfToken }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            isInWishlist = true;
+                            wishlistBtn.classList.add('active');
+                            icon.classList.remove('bi-heart');
+                            icon.classList.add('bi-heart-fill');
+                            showWishlistToast('Đã thêm sản phẩm vào danh sách yêu thích', 'add');
+                            openWishlistPanel();
+                        })
+                        .catch(() => alert('Có lỗi xảy ra!'));
+                    }
+                });
+            }
+            
+            // Copy link share button
+            const copyLinkBtn = document.querySelector('.share-btn[title="Copy link"]');
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(window.location.href).then(function() {
+                        alert('Đã sao chép liên kết!');
+                    });
+                });
+            }
+
+            // ==================== Wishlist Toast ====================
+            function showWishlistToast(message, type) {
+                // Remove existing toast
+                const existing = document.getElementById('wishlistToast');
+                if (existing) existing.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'wishlistToast';
+                toast.className = 'wishlist-toast ' + (type === 'add' ? 'toast-add' : 'toast-remove');
+                toast.innerHTML = '<i class="bi ' + (type === 'add' ? 'bi-heart-fill' : 'bi-heart') + '"></i> ' + message;
+                document.body.appendChild(toast);
+
+                // Trigger animation
+                requestAnimationFrame(() => toast.classList.add('show'));
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 2500);
+            }
+
+            // ==================== Wishlist Slide-in Panel ====================
+            function openWishlistPanel() {
+                let panel = document.getElementById('wishlistPanel');
+                let overlay = document.getElementById('wishlistOverlay');
+                if (!panel) createWishlistPanel();
+                panel = document.getElementById('wishlistPanel');
+                overlay = document.getElementById('wishlistOverlay');
+
+                loadWishlistItems();
+                requestAnimationFrame(() => {
+                    panel.classList.add('open');
+                    overlay.classList.add('open');
+                });
+            }
+
+            function closeWishlistPanel() {
+                const panel = document.getElementById('wishlistPanel');
+                const overlay = document.getElementById('wishlistOverlay');
+                if (panel) panel.classList.remove('open');
+                if (overlay) overlay.classList.remove('open');
+            }
+
+            function createWishlistPanel() {
+                // Overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'wishlistOverlay';
+                overlay.className = 'wishlist-overlay';
+                overlay.addEventListener('click', closeWishlistPanel);
+                document.body.appendChild(overlay);
+
+                // Panel
+                const panel = document.createElement('div');
+                panel.id = 'wishlistPanel';
+                panel.className = 'wishlist-panel';
+                panel.innerHTML = `
+                    <div class="wl-panel-header">
+                        <h5><i class="bi bi-heart-fill text-danger"></i> Danh sách yêu thích</h5>
+                        <button class="wl-panel-close" onclick="closeWishlistPanel()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="wl-panel-body" id="wishlistPanelBody">
+                        <div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>
+                    </div>
+                    <div class="wl-panel-footer">
+                        <a href="/profile/wishlist" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-heart me-1"></i> Xem tất cả danh sách yêu thích
+                        </a>
+                    </div>
+                `;
+                document.body.appendChild(panel);
+            }
+
+            function loadWishlistItems() {
+                const body = document.getElementById('wishlistPanelBody');
+                if (!body) return;
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                fetch('/api/wishlist?size=10&sort=createdAt,desc', {
+                    headers: { [csrfHeader]: csrfToken }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.data || !data.data.content || data.data.content.length === 0) {
+                        body.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-heart fs-1 d-block mb-2"></i>Chưa có sản phẩm yêu thích</div>';
+                        return;
+                    }
+                    const items = data.data.content;
+                    let html = '';
+                    items.forEach(item => {
+                        // Handle coverImage - check if already has path prefix or just filename
+                        let img = '/images/no-cover.png';
+                        if (item.bookCoverImage) {
+                            img = item.bookCoverImage.startsWith('/') ? item.bookCoverImage : ('/uploads/books/' + item.bookCoverImage);
+                        }
+                        const price = item.price ? new Intl.NumberFormat('vi-VN').format(item.price) + 'đ' : '';
+                        const bookUrl = item.bookSlug ? '/books/' + item.bookSlug : '/books';
+                        html += `
+                            <div class="wl-item">
+                                <a href="${bookUrl}" class="wl-item-img">
+                                    <img src="${img}" alt="${item.bookTitle}" onerror="this.src='/images/no-cover.png'">
+                                </a>
+                                <div class="wl-item-info">
+                                    <a href="${bookUrl}" class="wl-item-title">${item.bookTitle}</a>
+                                    <span class="wl-item-author">${item.authorName || ''}</span>
+                                    <span class="wl-item-price">${price}</span>
+                                </div>
+                                <button class="wl-item-remove" onclick="removeFromPanel(${item.bookId}, this)" title="Xóa">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        `;
+                    });
+                    body.innerHTML = html;
+                })
+                .catch(() => {
+                    body.innerHTML = '<div class="text-center py-4 text-muted">Không thể tải danh sách</div>';
+                });
+            }
+
+            function removeFromPanel(bookId, btn) {
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                
+                fetch('/api/wishlist/' + bookId, {
+                    method: 'DELETE',
+                    headers: { [csrfHeader]: csrfToken }
+                })
+                .then(r => r.json())
+                .then(() => {
+                    const item = btn.closest('.wl-item');
+                    if (item) {
+                        item.style.opacity = '0';
+                        item.style.transform = 'translateX(30px)';
+                        setTimeout(() => {
+                            item.remove();
+                            // Check if panel is empty
+                            const body = document.getElementById('wishlistPanelBody');
+                            if (body && !body.querySelector('.wl-item')) {
+                                body.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-heart fs-1 d-block mb-2"></i>Chưa có sản phẩm yêu thích</div>';
+                            }
+                        }, 250);
+                    }
+                    // Update the wishlist button on the current page if matches
+                    const currentBookId = document.getElementById('addToWishlist')?.getAttribute('data-book-id');
+                    if (currentBookId == bookId) {
+                        const wBtn = document.getElementById('addToWishlist');
+                        wBtn.classList.remove('active');
+                        wBtn.querySelector('i').classList.remove('bi-heart-fill');
+                        wBtn.querySelector('i').classList.add('bi-heart');
+                    }
+                    showWishlistToast('Đã xóa khỏi danh sách yêu thích', 'remove');
+                });
+            }
+        });
+    </script>
+
+    <!-- Wishlist Toast & Panel Styles -->
+    <style>
+        /* Toast notification */
+        .wishlist-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        .wishlist-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .wishlist-toast.toast-add {
+            background: linear-gradient(135deg, #e74c8b, #ff6b9d);
+        }
+        .wishlist-toast.toast-remove {
+            background: linear-gradient(135deg, #6c757d, #868e96);
+        }
+        .wishlist-toast i {
+            font-size: 18px;
+        }
+
+        /* Overlay */
+        .wishlist-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .wishlist-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Slide-in Panel */
+        .wishlist-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 380px;
+            max-width: 90vw;
+            height: 100vh;
+            background: #fff;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .wishlist-panel.open {
+            transform: translateX(0);
+        }
+        .wl-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .wl-panel-header h5 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .wl-panel-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .wl-panel-close:hover {
+            background: #f1f1f1;
+        }
+        .wl-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+        .wl-panel-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Wishlist Item in Panel */
+        .wl-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 8px;
+            border-radius: 10px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .wl-item:hover {
+            background: #f8f9fa;
+        }
+        .wl-item-img {
+            flex-shrink: 0;
+            width: 55px;
+            height: 75px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .wl-item-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .wl-item-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .wl-item-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .wl-item-title:hover {
+            color: #e74c8b;
+        }
+        .wl-item-author {
+            font-size: 12px;
+            color: #888;
+        }
+        .wl-item-price {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e74c8b;
+        }
+        .wl-item-remove {
+            background: none;
+            border: none;
+            color: #bbb;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .wl-item-remove:hover {
+            color: #e74c3c;
+            background: #fee;
+        }
+    </style>
+</body>
+</html>

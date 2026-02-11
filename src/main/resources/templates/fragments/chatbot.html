@@ -1,0 +1,320 @@
+<!-- AI Chatbot Fragment for Layout -->
+<th:block th:fragment="chatbot">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" th:href="@{/css/chatbot.css}"/>
+    
+    <!-- Chatbot Container -->
+    <div class="chatbot-container" id="chatbotContainer">
+        <div class="chatbot-header">
+            <div class="chatbot-title">
+                <img th:src="@{/images/logo/logo.png}" alt="MiniVerse" class="chatbot-logo"/>
+                <span>MiniVerse Assistant</span>
+            </div>
+            <div class="chatbot-controls">
+                <button id="chatbotExpand" title="Mở rộng">
+                    <i class="bi bi-arrows-angle-expand"></i>
+                </button>
+                <button id="chatbotMinimize" title="Thu nhỏ">
+                    <i class="bi bi-dash-lg"></i>
+                </button>
+                <button id="chatbotClose" title="Đóng">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chatbot-body">
+            <div class="chatbot-messages" id="chatbotMessages">
+                <!-- For authenticated users -->
+                <div sec:authorize="isAuthenticated()" class="message bot">
+                    <div class="message-content">
+                        Hii <span sec:authentication="name">bạn</span>! <br>
+                        Mình là MiniVerse Assistant nè~ Mình chuyên tư vấn sách và hỗ trợ mượn sách thôi nha! <br>
+                        Bạn muốn tìm sách gì, cứ nói mình nghe nè! 
+                    </div>
+                </div>
+                
+                <!-- For guests - login prompt -->
+                <div sec:authorize="!isAuthenticated()" class="chatbot-login-prompt">
+                    <i class="bi bi-chat-heart"></i>
+                    <h5>Đăng nhập để chat với AI</h5>
+                    <p>Hãy đăng nhập để sử dụng trợ lý AI và nhận gợi ý sách phù hợp với sở thích của bạn.</p>
+                    <a th:href="@{/login}" class="btn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Reply Buttons - only for authenticated users -->
+        <div sec:authorize="isAuthenticated()" class="chatbot-quick-replies" id="chatbotQuickReplies">
+            <button class="quick-reply-btn" data-message="Gợi ý sách IT - Công Nghệ Thông Tin">
+                <i class="bi bi-cpu"></i> IT - Công Nghệ
+            </button>
+            <button class="quick-reply-btn" data-message="Gợi ý sách Ẩm Thực Việt Nam">
+                <i class="bi bi-cup-hot"></i> Ẩm Thực VN
+            </button>
+            <button class="quick-reply-btn" data-message="Gợi ý sách giáo khoa">
+                <i class="bi bi-mortarboard"></i> Sách giáo khoa
+            </button>
+            <button class="quick-reply-btn" data-message="Gợi ý sách Truyện tranh">
+                <i class="bi bi-journal-richtext"></i> Truyện tranh
+            </button>
+        </div>
+        
+        <!-- Input area - only for authenticated users -->
+        <div sec:authorize="isAuthenticated()" class="chatbot-input">
+            <textarea id="chatbotInput" placeholder="Nhập tin nhắn..." rows="1"></textarea>
+            <button id="chatbotSend" title="Gửi">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Floating Button -->
+    <button class="chatbot-button" id="chatbotButton" title="Chat với AI">
+        <i class="bi bi-chat-dots-fill"></i>
+    </button>
+    
+    <!-- Chatbot Script -->
+    <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('chatbotContainer');
+        const button = document.getElementById('chatbotButton');
+        const expand = document.getElementById('chatbotExpand');
+        const minimize = document.getElementById('chatbotMinimize');
+        const close = document.getElementById('chatbotClose');
+        const input = document.getElementById('chatbotInput');
+        const send = document.getElementById('chatbotSend');
+        const messages = document.getElementById('chatbotMessages');
+        
+        // Check if user is authenticated
+        const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+        
+        let expansionState = 0;
+        
+        // Toggle chatbot visibility
+        button.addEventListener('click', function() {
+            container.classList.toggle('active');
+            button.classList.toggle('hidden');
+        });
+        
+        // Minimize chatbot
+        if (minimize) {
+            minimize.addEventListener('click', function() {
+                container.classList.remove('active');
+                button.classList.remove('hidden');
+            });
+        }
+        
+        // Close chatbot
+        if (close) {
+            close.addEventListener('click', function() {
+                container.classList.remove('active');
+                button.classList.remove('hidden');
+            });
+        }
+        
+        // Expand chatbot
+        if (expand) {
+            expand.addEventListener('click', function() {
+                expansionState = (expansionState + 1) % 3;
+                
+                // Remove all expansion classes first
+                container.classList.remove('expanded', 'expanded-fullsize');
+                
+                if (expansionState === 1) {
+                    container.classList.add('expanded');
+                    expand.innerHTML = '<i class="bi bi-arrows-angle-expand"></i>';
+                } else if (expansionState === 2) {
+                    container.classList.add('expanded-fullsize');
+                    expand.innerHTML = '<i class="bi bi-arrows-angle-contract"></i>';
+                } else {
+                    // State 0: normal size
+                    expand.innerHTML = '<i class="bi bi-arrows-angle-expand"></i>';
+                }
+            });
+        }
+        
+        // Only setup chat functionality if authenticated
+        if (isAuthenticated && input && send) {
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+            
+            // Send on Enter (without Shift)
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Send on button click
+            send.addEventListener('click', sendMessage);
+            
+            // Quick Reply Buttons - click to auto send message
+            const quickReplyBtns = document.querySelectorAll('.quick-reply-btn');
+            quickReplyBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const message = this.getAttribute('data-message');
+                    if (message) {
+                        input.value = message;
+                        sendMessage();
+                    }
+                });
+            });
+            
+            function sendMessage() {
+                const message = input.value.trim();
+                if (!message) return;
+                
+                // Add user message
+                addMessage(message, 'user');
+                input.value = '';
+                input.style.height = 'auto';
+                
+                // Show typing indicator
+                addTypingIndicator();
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+                
+                // Send to API
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (csrfToken) {
+                    headers[csrfHeader] = csrfToken;
+                }
+                
+                fetch('/api/chat/ai', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    removeTypingIndicator();
+                    if (data.success && data.data) {
+                        addMessage(data.data.response, 'bot');
+                        // Render product cards nếu có suggestedBooks
+                        if (data.data.suggestedBooks && data.data.suggestedBooks.length > 0) {
+                            addBookCards(data.data.suggestedBooks);
+                        }
+                    } else {
+                        addMessage(data.message || 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.', 'bot error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Chat error:', error);
+                    removeTypingIndicator();
+                    addMessage('Xin lỗi, không thể kết nối. Vui lòng thử lại sau.', 'bot error');
+                });
+            }
+            
+            function addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ' + type;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                // Format content for bot messages
+                if (type === 'bot' || type === 'bot error') {
+                    contentDiv.innerHTML = formatBotMessage(content);
+                } else {
+                    contentDiv.textContent = content;
+                }
+                
+                messageDiv.appendChild(contentDiv);
+                messages.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                messages.scrollTop = messages.scrollHeight;
+            }
+            
+            function formatBotMessage(content) {
+                // Escape HTML
+                let formatted = content
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                
+                // Convert markdown-style formatting
+                formatted = formatted
+                    // Bold text
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    // Line breaks
+                    .replace(/\n/g, '<br>')
+                    // Lists
+                    .replace(/^- (.+)/gm, '• $1');
+                
+                return formatted;
+            }
+            
+            function addTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot';
+                typingDiv.id = 'typingIndicator';
+                typingDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                `;
+                messages.appendChild(typingDiv);
+                messages.scrollTop = messages.scrollHeight;
+            }
+            
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+            }
+            
+            function addBookCards(books) {
+                const cardsDiv = document.createElement('div');
+                cardsDiv.className = 'message bot';
+                
+                let cardsHtml = '<div class="book-cards-container">';
+                books.forEach(book => {
+                    const imgSrc = book.coverImage || '/images/no-image.png';
+                    const stockBadge = book.inStock 
+                        ? '<span class="badge-stock in-stock">Còn hàng</span>' 
+                        : '<span class="badge-stock out-stock">Hết hàng</span>';
+                    const borrowBadge = book.canBorrow 
+                        ? '<span class="badge-stock can-borrow">Có thể mượn</span>' 
+                        : '';
+                    
+                    cardsHtml += `
+                        <a href="${book.link}" class="book-card-link" target="_blank">
+                            <div class="book-card">
+                                <img src="${imgSrc}" alt="${book.title}" class="book-card-img" 
+                                     onerror="this.src='/images/no-image.png'"/>
+                                <div class="book-card-info">
+                                    <div class="book-card-title">${book.title}</div>
+                                    <div class="book-card-author">${book.author}</div>
+                                    <div class="book-card-price">${book.price}</div>
+                                    <div class="book-card-badges">${stockBadge} ${borrowBadge}</div>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+                cardsHtml += '</div>';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content book-suggestions';
+                contentDiv.innerHTML = cardsHtml;
+                cardsDiv.appendChild(contentDiv);
+                messages.appendChild(cardsDiv);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    });
+    </script>
+</th:block>

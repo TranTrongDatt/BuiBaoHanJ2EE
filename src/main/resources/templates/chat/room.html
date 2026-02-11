@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Chat - ' + ${roomId} + ' - MiniVerse'">Chat Room</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .chat-wrapper {
+            height: calc(100vh - 200px);
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.sent {
+            align-items: flex-end;
+        }
+        .message.received {
+            align-items: flex-start;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 15px;
+            position: relative;
+        }
+        .message.sent .message-bubble {
+            background: #333;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .message.received .message-bubble {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-bottom-left-radius: 5px;
+        }
+        .message-sender {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        .message-time {
+            font-size: 0.65rem;
+            color: #adb5bd;
+            margin-top: 0.25rem;
+        }
+        .message.sent .message-time {
+            color: rgba(255,255,255,0.7);
+        }
+        .message-system {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
+        .chat-input-area {
+            padding: 1rem 0;
+        }
+        .typing-indicator {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-style: italic;
+            height: 20px;
+        }
+        .online-users {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+        .user-item:hover {
+            background: #f8f9fa;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 0.5rem;
+        }
+        .connection-status {
+            font-size: 0.85rem;
+        }
+        .connection-status.connected {
+            color: #28a745;
+        }
+        .connection-status.disconnected {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <th:block th:replace="~{layout::header}"></th:block>
+
+    <div class="container-fluid main-content py-3">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-door-open me-2"></i>Phòng chat</span>
+                        <a href="/chat" class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="mb-2" th:text="${roomId}">Room Name</h5>
+                        <p class="connection-status disconnected" id="connectionStatus">
+                            <i class="bi bi-wifi-off me-1"></i>Đang kết nối...
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-people me-2"></i>Thành viên online
+                    </div>
+                    <div class="card-body online-users" id="onlineUsers">
+                        <div class="user-item">
+                            <span class="status-dot"></span>
+                            <span sec:authentication="name">You</span>
+                            <span class="badge bg-secondary ms-auto">Bạn</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-chat-dots me-2"></i>
+                            <span th:text="${roomId}">Room</span>
+                        </span>
+                        <small class="text-muted" id="messageCount">0 tin nhắn</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="chat-wrapper">
+                            <!-- Messages Area -->
+                            <div class="chat-messages" id="chatMessages">
+                                <!-- Lịch sử chat -->
+                                <div th:each="msg : ${messages}" 
+                                     th:classappend="${msg.sender == #authentication.name} ? 'message sent' : 'message received'">
+                                    <small class="message-sender" th:if="${msg.sender != #authentication.name}" 
+                                           th:text="${msg.senderName}">Sender</small>
+                                    <div class="message-bubble">
+                                        <span th:text="${msg.content}">Message content</span>
+                                        <div class="message-time" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">12:00</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Typing Indicator -->
+                            <div class="typing-indicator px-3" id="typingIndicator"></div>
+
+                            <!-- Input Area -->
+                            <div class="chat-input-area px-3">
+                                <form id="messageForm" class="d-flex gap-2">
+                                    <input type="text" class="form-control" id="messageInput" 
+                                           placeholder="Nhập tin nhắn..." autocomplete="off" required>
+                                    <button type="submit" class="btn btn-dark" id="sendBtn" disabled>
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:replace="~{layout::footer}"></th:block>
+    
+    <!-- SockJS + STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script th:inline="javascript">
+        // Variables from server
+        const roomId = /*[[${roomId}]]*/ 'general';
+        const currentUser = /*[[${username}]]*/ 'anonymous';
+        
+        // WebSocket connection
+        let stompClient = null;
+        let connected = false;
+        
+        // DOM Elements
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const messageForm = document.getElementById('messageForm');
+        const sendBtn = document.getElementById('sendBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const messageCount = document.getElementById('messageCount');
+        
+        // Typing timeout
+        let typingTimeout = null;
+        
+        // Connect to WebSocket
+        function connect() {
+            const socket = new SockJS('/ws');
+            stompClient = new StompJs.Client({
+                webSocketFactory: () => socket,
+                reconnectDelay: 5000,
+                heartbeatIncoming: 4000,
+                heartbeatOutgoing: 4000,
+                debug: function (str) {
+                    console.log('STOMP: ' + str);
+                }
+            });
+            
+            stompClient.onConnect = function (frame) {
+                console.log('Connected: ' + frame);
+                connected = true;
+                updateConnectionStatus(true);
+                sendBtn.disabled = false;
+                
+                // Subscribe to room messages
+                stompClient.subscribe('/topic/chat/' + roomId, function (message) {
+                    const chatMessage = JSON.parse(message.body);
+                    showMessage(chatMessage);
+                });
+                
+                // Subscribe to typing indicator
+                stompClient.subscribe('/topic/chat/' + roomId + '/typing', function (message) {
+                    const typingMsg = JSON.parse(message.body);
+                    if (typingMsg.sender !== currentUser) {
+                        showTypingIndicator(typingMsg.sender);
+                    }
+                });
+                
+                // Subscribe to private messages
+                stompClient.subscribe('/user/queue/private', function (message) {
+                    const privateMsg = JSON.parse(message.body);
+                    showMessage(privateMsg, true);
+                });
+                
+                // Notify join
+                sendJoinMessage();
+            };
+            
+            stompClient.onStompError = function (frame) {
+                console.error('Broker reported error: ' + frame.headers['message']);
+                console.error('Additional details: ' + frame.body);
+                updateConnectionStatus(false);
+            };
+            
+            stompClient.onDisconnect = function () {
+                connected = false;
+                updateConnectionStatus(false);
+                sendBtn.disabled = true;
+            };
+            
+            stompClient.activate();
+        }
+        
+        // Disconnect
+        function disconnect() {
+            if (stompClient !== null && connected) {
+                // Send leave message
+                stompClient.publish({
+                    destination: '/app/chat/' + roomId + '/leave',
+                    body: JSON.stringify({
+                        sender: currentUser,
+                        type: 'LEAVE'
+                    })
+                });
+                stompClient.deactivate();
+            }
+            connected = false;
+            updateConnectionStatus(false);
+        }
+        
+        // Send join notification
+        function sendJoinMessage() {
+            stompClient.publish({
+                destination: '/app/chat/' + roomId + '/join',
+                body: JSON.stringify({
+                    sender: currentUser,
+                    type: 'JOIN'
+                })
+            });
+        }
+        
+        // Send message
+        function sendMessage(content) {
+            if (!connected || !content.trim()) return;
+            
+            stompClient.publish({
+                destination: '/app/chat/' + roomId,
+                body: JSON.stringify({
+                    sender: currentUser,
+                    content: content,
+                    roomId: roomId,
+                    type: 'CHAT'
+                })
+            });
+            
+            messageInput.value = '';
+        }
+        
+        // Send typing notification
+        function sendTypingNotification() {
+            if (!connected) return;
+            
+            stompClient.publish({
+                destination: '/app/chat/' + roomId + '/typing',
+                body: JSON.stringify({
+                    sender: currentUser,
+                    type: 'TYPING'
+                })
+            });
+        }
+        
+        // Show message in chat
+        function showMessage(message, isPrivate = false) {
+            const isSent = message.sender === currentUser;
+            const isSystem = message.type === 'JOIN' || message.type === 'LEAVE';
+            
+            let messageHtml = '';
+            
+            if (isSystem) {
+                messageHtml = `
+                    <div class="message-system">
+                        <i class="bi bi-${message.type === 'JOIN' ? 'box-arrow-in-right' : 'box-arrow-right'} me-1"></i>
+                        ${message.content}
+                    </div>
+                `;
+            } else {
+                const time = message.timestamp ? 
+                    new Date(message.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 
+                    new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                
+                messageHtml = `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        ${!isSent ? `<small class="message-sender">${message.senderName || message.sender}</small>` : ''}
+                        <div class="message-bubble">
+                            ${isPrivate ? '<i class="bi bi-lock me-1"></i>' : ''}
+                            <span>${escapeHtml(message.content)}</span>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+            scrollToBottom();
+            updateMessageCount();
+            
+            // Clear typing indicator
+            typingIndicator.textContent = '';
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator(username) {
+            typingIndicator.textContent = username + ' đang nhập...';
+            
+            // Clear after 2 seconds
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                typingIndicator.textContent = '';
+            }, 2000);
+        }
+        
+        // Update connection status UI
+        function updateConnectionStatus(isConnected) {
+            if (isConnected) {
+                connectionStatus.className = 'connection-status connected';
+                connectionStatus.innerHTML = '<i class="bi bi-wifi me-1"></i>Đã kết nối';
+            } else {
+                connectionStatus.className = 'connection-status disconnected';
+                connectionStatus.innerHTML = '<i class="bi bi-wifi-off me-1"></i>Mất kết nối';
+            }
+        }
+        
+        // Update message count
+        function updateMessageCount() {
+            const count = chatMessages.querySelectorAll('.message').length;
+            messageCount.textContent = count + ' tin nhắn';
+        }
+        
+        // Scroll to bottom
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Event Listeners
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage(messageInput.value);
+        });
+        
+        // Typing notification (debounced)
+        let typingDebounce = null;
+        messageInput.addEventListener('input', function() {
+            clearTimeout(typingDebounce);
+            typingDebounce = setTimeout(sendTypingNotification, 300);
+        });
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', disconnect);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            connect();
+            scrollToBottom();
+            updateMessageCount();
+        });
+    </script>
+</body>
+</html>

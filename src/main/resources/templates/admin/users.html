@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{admin/layout :: head}"></th:block>
+    <style>
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-locked { background: #fef3c7; color: #92400e; }
+        .status-banned { background: #fee2e2; color: #991b1b; }
+        .status-pending { background: #e0e7ff; color: #3730a3; }
+        .role-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; margin: 1px; display: inline-block; }
+        .role-admin { background: #dc3545; color: #fff; }
+        .role-staff { background: #fd7e14; color: #fff; }
+        .role-user { background: #0d6efd; color: #fff; }
+        .action-btn { padding: 4px 8px; font-size: 0.78rem; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 3px; }
+        .action-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .btn-role { background: #6f42c1; color: #fff; }
+        .btn-ban { background: #dc3545; color: #fff; }
+        .btn-unban { background: #198754; color: #fff; }
+        .modal-role .form-check { padding: 10px 15px; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 8px; transition: all 0.2s; }
+        .modal-role .form-check:hover { background: #f8f9fa; }
+        .modal-role .form-check-input:checked + .form-check-label { font-weight: 600; }
+        .modal-role .role-desc { font-size: 0.8rem; color: #6c757d; }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{admin/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{admin/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="admin-content">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="mb-1"><i class="bi bi-people me-2"></i>Quản lý người dùng</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Người dùng</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <a th:href="@{/admin/users/add}" class="admin-btn admin-btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Thêm người dùng
+                    </a>
+                </div>
+
+                <!-- Alert messages -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-1"></i><span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-1"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- Table Card -->
+                <div class="admin-table-card">
+                    <div class="admin-table-header">
+                        <h3><i class="bi bi-table me-2"></i>Danh sách người dùng</h3>
+                    </div>
+                    <div class="admin-table-body">
+                        <div class="table-responsive">
+                        <table class="admin-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên người dùng</th>
+                                    <th>Email</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="user : ${users}">
+                                    <td th:text="${user.id}"></td>
+                                    <td>
+                                        <strong th:text="${user.username}"></strong>
+                                        <br th:if="${user.fullName != null}"/>
+                                        <small class="text-muted" th:if="${user.fullName != null}" th:text="${user.fullName}"></small>
+                                    </td>
+                                    <td th:text="${user.email}"></td>
+                                    <td>
+                                        <span th:each="role : ${user.roles}"
+                                              th:classappend="${role.name == 'ROLE_ADMIN'} ? 'role-admin' : (${role.name == 'ROLE_STAFF'} ? 'role-staff' : 'role-user')"
+                                              class="role-badge"
+                                              th:text="${role.name == 'ROLE_ADMIN'} ? 'Admin' : (${role.name == 'ROLE_STAFF'} ? 'Staff' : 'User')">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge"
+                                              th:classappend="${user.status?.name() == 'BANNED'} ? 'status-banned' : (${user.status?.name() == 'LOCKED'} ? 'status-locked' : (${user.status?.name() == 'PENDING'} ? 'status-pending' : 'status-active'))"
+                                              th:text="${user.status?.name() == 'BANNED'} ? 'Bị cấm' : (${user.status?.name() == 'LOCKED'} ? 'Bị khóa' : (${user.status?.name() == 'PENDING'} ? 'Chờ duyệt' : 'Hoạt động'))">
+                                        </span>
+                                    </td>
+                                    <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                    <td class="text-center" style="white-space: nowrap;">
+                                        <!-- Phân quyền -->
+                                        <button class="action-btn btn-role btn-open-role" title="Phân quyền"
+                                                th:data-user-id="${user.id}"
+                                                th:data-username="${user.username}"
+                                                th:data-roles="${#strings.listJoin(user.roles.![name], ',')}">
+                                            <i class="bi bi-shield-lock"></i> Phân quyền
+                                        </button>
+                                        <!-- Cấm / Mở cấm -->
+                                        <button th:if="${user.status?.name() != 'BANNED'}" class="action-btn btn-ban btn-open-ban" title="Cấm tài khoản"
+                                                th:data-user-id="${user.id}"
+                                                th:data-username="${user.username}">
+                                            <i class="bi bi-slash-circle"></i> Cấm
+                                        </button>
+                                        <button th:if="${user.status?.name() == 'BANNED'}" class="action-btn btn-unban btn-do-unban" title="Mở cấm"
+                                                th:data-user-id="${user.id}">
+                                            <i class="bi bi-unlock"></i> Mở cấm
+                                        </button>
+                                        <!-- Sửa -->
+                                        <a class="action-btn" style="background:#ffc107;color:#000;" th:href="@{/admin/users/edit/{id}(id=${user.id})}" title="Sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <!-- Xóa -->
+                                        <button class="action-btn btn-do-delete" style="background:#6c757d;color:#fff;" title="Xóa"
+                                                th:data-user-id="${user.id}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Empty state -->
+                                <tr th:if="${users == null or users.empty}">
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="bi bi-inbox display-4 text-muted"></i>
+                                        <p class="text-muted mt-2">Chưa có người dùng nào</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ========== MODAL PHÂN QUYỀN ========== -->
+    <div class="modal fade modal-role" id="roleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #6f42c1, #0d6efd); color: #fff;">
+                    <h5 class="modal-title"><i class="bi bi-shield-lock me-2"></i>Phân quyền</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Người dùng: <strong id="roleModalUsername"></strong></p>
+                    <input type="hidden" id="roleModalUserId"/>
+                    <div id="roleCheckboxes">
+                        <!-- Render dynamically from th:each -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRoles()">
+                        <i class="bi bi-check-lg me-1"></i>Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL CẤM TÀI KHOẢN ========== -->
+    <div class="modal fade" id="banModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #dc3545; color: #fff;">
+                    <h5 class="modal-title"><i class="bi bi-slash-circle me-2"></i>Cấm tài khoản</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn sắp cấm tài khoản: <strong id="banModalUsername"></strong></p>
+                    <input type="hidden" id="banModalUserId"/>
+                    <div class="mb-3">
+                        <label for="banReason" class="form-label">Lý do cấm:</label>
+                        <textarea class="form-control" id="banReason" rows="3" placeholder="Nhập lý do cấm tài khoản..."></textarea>
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Khi cấm, tài khoản sẽ <strong>không thể đăng nhập</strong> cho đến khi được admin mở khóa.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmBan()">
+                        <i class="bi bi-slash-circle me-1"></i>Xác nhận cấm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Danh sách tất cả roles từ server (đã là simple map, không có circular ref)
+        const ALL_ROLES = /*[[${roles}]]*/ [];
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // ========== EVENT DELEGATION (thay vì inline onclick) ==========
+        document.addEventListener('click', function(e) {
+            const roleBtn = e.target.closest('.btn-open-role');
+            if (roleBtn) {
+                openRoleModal(
+                    roleBtn.dataset.userId,
+                    roleBtn.dataset.username,
+                    roleBtn.dataset.roles
+                );
+                return;
+            }
+            const banBtn = e.target.closest('.btn-open-ban');
+            if (banBtn) {
+                openBanModal(banBtn.dataset.userId, banBtn.dataset.username);
+                return;
+            }
+            const unbanBtn = e.target.closest('.btn-do-unban');
+            if (unbanBtn) {
+                unbanUser(unbanBtn.dataset.userId);
+                return;
+            }
+            const delBtn = e.target.closest('.btn-do-delete');
+            if (delBtn) {
+                deleteUser(delBtn.dataset.userId);
+                return;
+            }
+        });
+
+        // ========== PHÂN QUYỀN (RADIO — chỉ 1 role) ==========
+        function openRoleModal(userId, username, currentRoles) {
+            document.getElementById('roleModalUserId').value = userId;
+            document.getElementById('roleModalUsername').textContent = username;
+            
+            const currentRoleList = currentRoles ? currentRoles.split(',') : [];
+            const container = document.getElementById('roleCheckboxes');
+            container.innerHTML = '';
+
+            const roleDescMap = {
+                'ROLE_ADMIN': 'Quản trị viên hệ thống — toàn quyền',
+                'ROLE_STAFF': 'Nhân viên — quyền quản lý sách & đơn hàng',
+                'ROLE_USER': 'Người dùng thông thường'
+            };
+            const roleColorMap = {
+                'ROLE_ADMIN': '#dc3545',
+                'ROLE_STAFF': '#fd7e14',
+                'ROLE_USER': '#0d6efd'
+            };
+
+            ALL_ROLES.forEach(function(role) {
+                const isChecked = currentRoleList.includes(role.name);
+                const color = roleColorMap[role.name] || '#6c757d';
+                const desc = roleDescMap[role.name] || role.description || '';
+                container.innerHTML += `
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="userRole" value="${role.name}" 
+                               id="role_${role.id}" ${isChecked ? 'checked' : ''} 
+                               style="border-color: ${color};">
+                        <label class="form-check-label" for="role_${role.id}">
+                            <span style="color: ${color}; font-weight: 600;">${role.name.replace('ROLE_', '')}</span>
+                            <br><span class="role-desc">${desc}</span>
+                        </label>
+                    </div>
+                `;
+            });
+
+            new bootstrap.Modal(document.getElementById('roleModal')).show();
+        }
+
+        async function saveRoles() {
+            const userId = document.getElementById('roleModalUserId').value;
+            const selected = document.querySelector('#roleCheckboxes input[name="userRole"]:checked');
+
+            if (!selected) {
+                alert('Phải chọn 1 quyền!');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/roles/set?roleName=${encodeURIComponent(selected.value)}`, {
+                    method: 'POST',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+
+                if (data.success !== false) {
+                    bootstrap.Modal.getInstance(document.getElementById('roleModal')).hide();
+                    showToast('Đã cập nhật quyền thành công!', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể cập nhật quyền'));
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // ========== CẤM TÀI KHOẢN ==========
+        function openBanModal(userId, username) {
+            document.getElementById('banModalUserId').value = userId;
+            document.getElementById('banModalUsername').textContent = username;
+            document.getElementById('banReason').value = '';
+            new bootstrap.Modal(document.getElementById('banModal')).show();
+        }
+
+        async function confirmBan() {
+            const userId = document.getElementById('banModalUserId').value;
+            const reason = document.getElementById('banReason').value;
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/ban?reason=${encodeURIComponent(reason)}`, {
+                    method: 'POST',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+
+                if (data.success !== false) {
+                    bootstrap.Modal.getInstance(document.getElementById('banModal')).hide();
+                    showToast('Đã cấm tài khoản thành công!', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể cấm tài khoản'));
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // ========== MỞ CẤM ==========
+        async function unbanUser(userId) {
+            if (!confirm('Bạn có chắc muốn mở cấm tài khoản này?')) return;
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/unban`, {
+                    method: 'POST',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+
+                if (data.success !== false) {
+                    showToast('Đã mở cấm tài khoản!', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể mở cấm'));
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // ========== XÓA USER ==========
+        async function deleteUser(userId) {
+            if (!confirm('Bạn có chắc muốn XÓA VĨNH VIỄN người dùng này? Thao tác này không thể hoàn tác!')) return;
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/users/${userId}/delete`;
+
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_csrf';
+            csrf.value = csrfToken;
+            form.appendChild(csrf);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // ========== TOAST NOTIFICATION ==========
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideIn 0.3s ease;';
+            toast.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; }, 2000);
+            setTimeout(() => toast.remove(), 2500);
+        }
+        /*]]>*/
+    </script>
+</body>
+</html>

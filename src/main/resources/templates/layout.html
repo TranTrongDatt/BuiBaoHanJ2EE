@@ -1,64 +1,338 @@
-<!doctype html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initialscale=1.0" />
-    <title>My App</title>
-    <link
-      th:fragment="link-css"
-      rel="stylesheet"
-      th:href="@{/css/bootstrap.min.css}"
-    />
-    <link
-      th:fragment="custom-css"
-      rel="stylesheet"
-      th:href="@{/css/style.css}"
-    />
-  </head>
-  <body class="d-flex flex-column h-100">
-    <header th:fragment="header">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="/">HUTECH</a>
-          <button
-            class="navbar-toggler"
-            type="button"
-            data-bstoggle="collapse"
-            data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="/">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/books">List Book</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/books/add">Add Book</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
-    </header>
-    <div class="container">
-      <div th:fragment="content"></div>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" 
+      lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>MiniVerse - Bookstore</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS (CDN for latest) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+          rel="stylesheet" 
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
+          crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Swiper CSS for Carousels -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    
+    <!-- Link CSS Fragment - for other pages to include -->
+    <th:block th:fragment="link-css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+              rel="stylesheet" 
+              integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
+              crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
+    </th:block>
+    <!-- Custom CSS Fragment -->
+    <th:block th:fragment="custom-css">
+        <link rel="stylesheet" th:href="@{/css/style.css}">
+    </th:block>
+</head>
+<body class="d-flex flex-column min-vh-100" style="background: var(--background, #FDFDFD);">
+
+<th:block th:fragment="header">
+<!-- SIDEBAR MENU - Pinterest Style -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">
+            <img th:src="@{/images/logo/logo.png}" alt="MiniVerse" height="40"/>
+        </a>
+        <button class="sidebar-close" onclick="toggleSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
-    <footer th:fragment="footer" class="footer mt-auto py-3 bg-light">
-      <div class="container text-center">
-        Copyright &copy;
-        <span th:text="${#dates.year(#dates.createNow())}"></span>
-        <a href="https://www.hutech.edu.vn/">HUTECH Education</a>
-      </div>
-      <script th:src="@{/js/bootstrap.min.js}"></script>
-      <script th:src="@{/js/jquery-3.7.0.min.js}"></script>
-    </footer>
-  </body>
+    <ul class="sidebar-nav">
+        <!-- Sidebar theo Plan.md: Đơn hàng, Đánh giá, Wishlist, About Us, Blog -->
+        <li sec:authorize="isAuthenticated()">
+            <a href="/profile/orders" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/profile/orders') ? 'active' : ''}">
+                <i class="bi bi-box-seam"></i> <span>Đơn hàng của tôi</span>
+            </a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+            <a href="/profile/reviews" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/profile/reviews') ? 'active' : ''}">
+                <i class="bi bi-star"></i> <span>Đánh giá</span>
+            </a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+            <a href="/profile/wishlist" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/profile/wishlist') ? 'active' : ''}">
+                <i class="bi bi-heart"></i> <span>Wishlist</span>
+            </a>
+        </li>
+        <li>
+            <a href="/about" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/about') ? 'active' : ''}">
+                <i class="bi bi-info-circle"></i> <span>About Us</span>
+            </a>
+        </li>
+        <li>
+            <a href="/blog" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/blog') ? 'active' : ''}">
+                <i class="bi bi-journal-heart"></i> <span>Blog</span>
+            </a>
+        </li>
+    </ul>
+    <div class="sidebar-footer">
+        <div class="sidebar-subscribe" sec:authorize="!isAuthenticated()">
+            <span class="subscribe-label">Thành viên mới?</span>
+            <a href="/register" class="btn-subscribe">
+                <i class="bi bi-person-plus"></i> Đăng ký
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- HEADER - Curved Floating Style -->
+<header class="main-header">
+    <div class="header-inner">
+        <!-- Left: Menu Button -->
+        <button class="menu-btn" onclick="toggleSidebar()" title="Menu">
+            <i class="bi bi-list"></i>
+        </button>
+        
+        <!-- Logo with Image -->
+        <a href="/" class="header-logo">
+            <img th:src="@{/images/logo/logo.png}" alt="MiniVerse" class="logo-img"/>
+            <span>MiniVerse</span>
+        </a>
+        
+        <!-- Navigation Links (Logo đã dẫn về Home, không cần nút Home riêng) -->
+        <ul class="nav-links d-none d-lg-flex">
+            <li class="nav-item">
+                <a href="/books" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/books') ? 'active' : ''}">
+                    <i class="bi bi-book"></i> Product
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/service" th:classappend="${currentUri != null and #strings.startsWith(currentUri, '/service') ? 'active' : ''}">
+                    <i class="bi bi-building-check"></i> Service
+                </a>
+            </li>
+        </ul>
+        
+        <!-- Actions (Right side) - Thứ tự theo Plan.md: Chuông → Tìm kiếm → Giỏ hàng → Admin → Hồ sơ → Đăng xuất -->
+        <div class="header-actions">
+            <!-- 1. Notification Bell (Chuông thông báo) -->
+            <a th:href="@{/profile/notifications}" class="header-icon-btn" 
+               sec:authorize="isAuthenticated()" title="Thông báo">
+                <i class="bi bi-bell"></i>
+                <span class="badge" th:if="${notificationCount != null and notificationCount > 0}" 
+                      th:text="${notificationCount}">3</span>
+            </a>
+            
+            <!-- 2. Search Box (Thanh tìm kiếm) -->
+            <form class="header-search" th:action="@{/books}" method="get">
+                <input type="text" name="keyword" placeholder="Tìm kiếm sách..." />
+                <button type="submit"><i class="bi bi-search"></i></button>
+            </form>
+            
+            <!-- 3. Cart (Giỏ hàng) -->
+            <a href="/cart" class="header-icon-btn" title="Giỏ hàng">
+                <i class="bi bi-cart3"></i>
+                <span class="badge cart-badge" id="cartBadge"
+                      th:if="${session.cart != null and session.cart.totalQuantity > 0}"
+                      th:text="${session.cart.totalQuantity}">0</span>
+            </a>
+            
+            <!-- 3.5 Orders (Đơn hàng) -->
+            <a href="/profile/orders" class="header-icon-btn" sec:authorize="isAuthenticated()" title="Đơn hàng của tôi">
+                <i class="bi bi-receipt"></i>
+            </a>
+            
+            <!-- 4. Admin Button (chỉ hiển thị với ROLE_ADMIN) -->
+            <a th:href="@{/admin}" class="header-icon-btn admin-header-btn" 
+               sec:authorize="hasAuthority('ROLE_ADMIN') or hasAuthority('ADMIN')" 
+               title="Trang quản trị">
+                <i class="bi bi-shield-lock"></i>
+                <span class="d-none d-lg-inline">Admin</span>
+            </a>
+            
+            <!-- Profile Dropdown (Authenticated) - Hover to show menu -->
+            <div class="profile-dropdown" sec:authorize="isAuthenticated()">
+                <a href="#" class="profile-btn" title="Hồ sơ">
+                    <span class="profile-icon"><i class="bi bi-person-fill"></i></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="/profile">
+                            <i class="bi bi-person-circle"></i> Hồ sơ cá nhân
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="/profile/change-password">
+                            <i class="bi bi-key"></i> Đổi mật khẩu
+                        </a>
+                    </li>
+                    
+                    <!-- STAFF/LIBRARIAN Button - (Ẩn, chỉ STAFF thấy) -->
+                    <li sec:authorize="hasAuthority('ROLE_STAFF') or hasAuthority('STAFF')">
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li sec:authorize="hasAuthority('ROLE_STAFF') or hasAuthority('STAFF')">
+                        <a class="dropdown-item staff-link" href="/library">
+                            <i class="bi bi-book-half"></i> THỦ THƯ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Login/Register (Not Authenticated) -->
+            <a href="/login" class="profile-btn" sec:authorize="!isAuthenticated()">
+                <span class="profile-icon"><i class="bi bi-box-arrow-in-right"></i></span>
+                <span class="d-none d-md-inline">Đăng nhập</span>
+            </a>
+            
+            <!-- Logout Button (Authenticated) - Góc phải header -->
+            <form th:action="@{/logout}" method="post" class="d-inline" sec:authorize="isAuthenticated()">
+                <button type="submit" class="logout-btn" title="Đăng xuất">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="d-none d-lg-inline">Đăng xuất</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<!-- Sidebar Toggle Script (inside header fragment so standalone pages get it) -->
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebarMenu').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('sidebarMenu').classList.remove('active');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+    });
+</script>
+</th:block>
+
+<!-- Header Spacer -->
+<div class="header-spacer"></div>
+
+<!-- MAIN CONTENT -->
+<main class="flex-grow-1">
+    <div class="container py-4">
+        <div th:fragment="content"></div>
+    </div>
+</main>
+
+<!-- FOOTER - Dark Theme -->
+<footer th:fragment="footer" class="main-footer">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <!-- About Us -->
+            <div class="footer-col">
+                <h4>About Us</h4>
+                <p>MiniVerse - Website cung cấp sản phẩm về sách tích hợp AI Chatbot. Đọc để chạm tới những vì sao.</p>
+                <div class="social-links">
+                    <a href="https://www.facebook.com/han.bao.835638/" target="_blank" class="facebook" title="Facebook">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                    <a href="#" class="tiktok" title="TikTok">
+                        <i class="bi bi-tiktok"></i>
+                    </a>
+                    <a href="https://instagram.com/b._.baohan" target="_blank" class="instagram" title="Instagram">
+                        <i class="bi bi-instagram"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="footer-col">
+                <h4>Liên kết nhanh</h4>
+                <ul>
+                    <li><a href="/"><i class="bi bi-chevron-right"></i> Trang chủ</a></li>
+                    <li><a href="/books"><i class="bi bi-chevron-right"></i> Sản phẩm</a></li>
+                    <li><a href="/service"><i class="bi bi-chevron-right"></i> Dịch vụ mượn sách</a></li>
+                    <li><a href="/blog"><i class="bi bi-chevron-right"></i> Blog</a></li>
+                    <li><a href="/about"><i class="bi bi-chevron-right"></i> Giới thiệu</a></li>
+                </ul>
+            </div>
+            
+            <!-- FAQ & Support -->
+            <div class="footer-col">
+                <h4>Hỗ trợ</h4>
+                <ul>
+                    <li><a href="/faq"><i class="bi bi-chevron-right"></i> Câu hỏi thường gặp</a></li>
+                    <li><a href="/contact"><i class="bi bi-chevron-right"></i> Liên hệ</a></li>
+                    <li><a href="/policy"><i class="bi bi-chevron-right"></i> Chính sách đổi trả</a></li>
+                    <li><a href="/terms"><i class="bi bi-chevron-right"></i> Điều khoản sử dụng</a></li>
+                </ul>
+            </div>
+            
+            <!-- Payment Methods -->
+            <div class="footer-col">
+                <h4>Thanh toán</h4>
+                <p>Chấp nhận nhiều phương thức thanh toán tiện lợi</p>
+                <div class="payment-methods">
+                    <span class="payment-badge visa" title="VISA">
+                        <i class="bi bi-credit-card-fill"></i> VISA
+                    </span>
+                    <span class="payment-badge jcb" title="JCB">
+                        <i class="bi bi-credit-card-2-front-fill"></i> JCB
+                    </span>
+                    <span class="payment-badge vietqr" title="VietQR">
+                        <i class="bi bi-qr-code"></i> VietQR
+                    </span>
+                    <span class="payment-badge cash" title="Tiền mặt">
+                        <i class="bi bi-cash-stack"></i> COD
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <p>
+                Copyright &copy; <span th:text="${#dates.year(#dates.createNow())}">2026</span> 
+                <a href="/">MiniVerse Bookstore</a>. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>
+
+<!-- AI Chatbot Button -->
+<a href="/chat/ai" class="ai-chatbot-btn" sec:authorize="isAuthenticated()" title="Chat với AI">
+    <i class="bi bi-robot"></i>
+</a>
+
+<!-- AI Chatbot -->
+<th:block th:replace="~{fragments/chatbot :: chatbot}"></th:block>
+
+<script th:src="@{/js/jquery-3.7.0.min.js}"></script>
+<!-- Bootstrap Bundle JS (includes Popper.js for dropdowns) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+        crossorigin="anonymous"></script>
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script>
+    // Page transition animation - exclude dropdown toggles and buttons
+    document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([onclick]):not([data-bs-toggle]):not(.dropdown-item):not(.dropdown-toggle)').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.href && !this.href.includes('javascript:') && !this.href.includes('#')) {
+                e.preventDefault();
+                document.body.classList.add('page-transition-out');
+                setTimeout(() => {
+                    window.location.href = this.href;
+                }, 300);
+            }
+        });
+    });
+    
+    // Page load animation
+    window.addEventListener('load', function() {
+        document.body.classList.add('page-loaded');
+    });
+</script>
+</body>
 </html>

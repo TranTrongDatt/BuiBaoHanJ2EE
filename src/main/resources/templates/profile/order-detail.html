@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Đơn hàng ' + ${order.orderCode} + ' - MiniVerse'">Chi tiết đơn hàng</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <th:block th:replace="~{layout::custom-css}"></th:block>
+    <style>
+        .detail-container { max-width:1100px; margin:0 auto; padding:2rem 1rem; }
+        .section-card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.06); margin-bottom:1.5rem; overflow:hidden; }
+        .section-header { background:#f8fafc; padding:0.85rem 1.25rem; font-weight:700; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:0.5rem; }
+        .section-body { padding:1.25rem; }
+        .info-row { display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid #f3f4f6; }
+        .info-row:last-child { border-bottom:none; }
+        .info-label { color:#6b7280; }
+        .info-value { font-weight:600; text-align:right; }
+        .status-badge { display:inline-block; padding:0.3rem 0.85rem; border-radius:20px; font-size:0.82rem; font-weight:600; }
+        .status-PENDING { background:#fef3c7; color:#92400e; }
+        .status-CONFIRMED { background:#dbeafe; color:#1e40af; }
+        .status-PROCESSING { background:#e0e7ff; color:#3730a3; }
+        .status-SHIPPING { background:#cffafe; color:#155e75; }
+        .status-DELIVERED { background:#d1fae5; color:#065f46; }
+        .status-COMPLETED { background:#d1fae5; color:#065f46; }
+        .status-CANCELLED { background:#fee2e2; color:#991b1b; }
+        .status-RETURNED { background:#fce7f3; color:#9d174d; }
+        .order-item-row { display:flex; align-items:center; gap:1rem; padding:0.75rem 0; border-bottom:1px solid #f3f4f6; }
+        .order-item-row:last-child { border-bottom:none; }
+        .order-item-img { width:55px; height:70px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+        .order-item-info { flex:1; min-width:0; }
+        .order-item-name { font-weight:600; font-size:0.95rem; }
+        .order-item-meta { font-size:0.82rem; color:#6b7280; }
+        .order-item-price { font-weight:700; color:#dc2626; white-space:nowrap; }
+        .total-final { font-size:1.15rem; font-weight:800; color:#6366f1; }
+        /* Progress tracker */
+        .progress-tracker { display:flex; justify-content:space-between; margin:1rem 0; position:relative; }
+        .progress-tracker::before { content:''; position:absolute; top:18px; left:10%; right:10%; height:3px; background:#e5e7eb; z-index:0; }
+        .progress-step { display:flex; flex-direction:column; align-items:center; position:relative; z-index:1; flex:1; }
+        .progress-icon { width:36px; height:36px; border-radius:50%; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:#9ca3af; margin-bottom:0.35rem; }
+        .progress-step.active .progress-icon { background:#6366f1; color:#fff; }
+        .progress-step.done .progress-icon { background:#10b981; color:#fff; }
+        .progress-step-label { font-size:0.72rem; color:#6b7280; text-align:center; }
+        .header-spacer { height:80px; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout::header}"></th:block>
+<div class="header-spacer"></div>
+
+<div class="detail-container">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/profile/orders" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h4 class="mb-0">Đơn hàng <span th:text="${order.orderCode}">ORD-xxx</span></h4>
+        <span class="status-badge ms-3" th:classappend="'status-' + ${order.status.name()}"
+              th:text="${order.status.displayName}">Trạng thái</span>
+        <a th:href="@{/profile/orders/{id}/invoice(id=${order.id})}" class="btn btn-outline-primary btn-sm ms-auto" target="_blank">
+            <i class="bi bi-eye me-1"></i>Xem hóa đơn
+        </a>
+        <a th:href="@{/profile/orders/{id}/pdf(id=${order.id})}" class="btn btn-outline-secondary btn-sm ms-2">
+            <i class="bi bi-file-pdf me-1"></i>Tải PDF
+        </a>
+    </div>
+
+    <!-- Progress tracker -->
+    <div class="section-card">
+        <div class="section-body">
+            <div class="progress-tracker">
+                <div class="progress-step"
+                     th:classappend="${order.status.name() == 'PENDING'} ? 'active' : (${order.status.ordinal() > 0 and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED'} ? 'done' : '')">
+                    <div class="progress-icon"><i class="bi bi-clock"></i></div>
+                    <span class="progress-step-label">Chờ xác nhận</span>
+                </div>
+                <div class="progress-step"
+                     th:classappend="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PROCESSING'} ? 'active' : (${order.status.ordinal() > 2 and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED'} ? 'done' : '')">
+                    <div class="progress-icon"><i class="bi bi-check-circle"></i></div>
+                    <span class="progress-step-label">Đã xác nhận</span>
+                </div>
+                <div class="progress-step"
+                     th:classappend="${order.status.name() == 'SHIPPING'} ? 'active' : (${order.status.ordinal() > 3 and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED'} ? 'done' : '')">
+                    <div class="progress-icon"><i class="bi bi-truck"></i></div>
+                    <span class="progress-step-label">Đang giao</span>
+                </div>
+                <div class="progress-step"
+                     th:classappend="${order.status.name() == 'DELIVERED' or order.status.name() == 'COMPLETED'} ? 'done' : ''">
+                    <div class="progress-icon"><i class="bi bi-house-check"></i></div>
+                    <span class="progress-step-label">Đã giao</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Items -->
+            <div class="section-card">
+                <div class="section-header"><i class="bi bi-box-seam"></i> Sản phẩm</div>
+                <div class="section-body">
+                    <div th:each="item : ${order.items}" class="order-item-row">
+                        <img th:src="@{${item.bookImage != null ? item.bookImage : '/images/banner/hero-books.png'}}"
+                             th:alt="${item.bookTitle}"
+                             onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
+                             class="order-item-img">
+                        <div class="order-item-info">
+                            <div class="order-item-name" th:text="${item.bookTitle}">Tên sách</div>
+                            <div class="order-item-meta">
+                                <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                                × <span th:text="${item.quantity}">1</span>
+                            </div>
+                        </div>
+                        <div class="order-item-price">
+                            <span th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'NONE')}">0</span>₫
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    <div class="info-row">
+                        <span class="info-label">Tạm tính</span>
+                        <span class="info-value" th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phí vận chuyển</span>
+                        <span class="info-value" th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                    </div>
+                    <div th:if="${order.discountAmount != null and order.discountAmount > 0}" class="info-row">
+                        <span class="info-label">Giảm giá</span>
+                        <span class="info-value text-success">-<span th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'NONE')}">0</span>₫</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="fw-bold">Tổng thanh toán</span>
+                        <span class="total-final" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'NONE')} + '₫'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Order info -->
+            <div class="section-card">
+                <div class="section-header"><i class="bi bi-info-circle"></i> Thông tin đơn</div>
+                <div class="section-body" style="font-size:0.92rem;">
+                    <div class="info-row">
+                        <span class="info-label">Mã đơn</span>
+                        <span class="info-value" th:text="${order.orderCode}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày đặt</span>
+                        <span class="info-value" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Thanh toán</span>
+                        <span class="info-value" th:text="${order.paymentMethod.displayName}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">TT thanh toán</span>
+                        <span class="info-value" th:text="${order.paymentStatus.name()}"></span>
+                    </div>
+                    <div th:if="${order.trackingNumber != null}" class="info-row">
+                        <span class="info-label">Mã vận đơn</span>
+                        <span class="info-value" th:text="${order.trackingNumber}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receiver info -->
+            <div class="section-card">
+                <div class="section-header"><i class="bi bi-person"></i> Người nhận</div>
+                <div class="section-body" style="font-size:0.92rem;">
+                    <div class="info-row">
+                        <span class="info-label">Họ tên</span>
+                        <span class="info-value" th:text="${order.receiverName}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">SĐT</span>
+                        <span class="info-value" th:text="${order.receiverPhone}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Địa chỉ</span>
+                        <span class="info-value" style="max-width:200px; word-wrap:break-word; text-align:right;" th:text="${order.shippingAddress}"></span>
+                    </div>
+                    <div th:if="${order.notes != null and !order.notes.isEmpty()}" class="info-row">
+                        <span class="info-label">Ghi chú</span>
+                        <span class="info-value" th:text="${order.notes}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div th:if="${order.status.name() == 'PENDING'}" class="section-card">
+                <div class="section-body text-center">
+                    <p class="text-muted mb-2" style="font-size:0.85rem;">Bạn có thể huỷ đơn khi chưa được xác nhận</p>
+                    <button class="btn btn-outline-danger btn-sm" onclick="if(confirm('Bạn chắc chắn muốn huỷ đơn hàng?')) { /* TODO: cancel API */ alert('Chức năng huỷ đơn sẽ sớm được cập nhật');}">
+                        <i class="bi bi-x-circle me-1"></i>Huỷ đơn hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{layout::footer}"></th:block>
+</body>
+</html>

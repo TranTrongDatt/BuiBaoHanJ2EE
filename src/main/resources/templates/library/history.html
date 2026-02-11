@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+    <title>Borrow History - MiniVerse</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3><i class="bi bi-clock-history me-2"></i>Borrow History</h3>
+                <p class="text-muted mb-0">Your complete borrowing history</p>
+            </div>
+            <a th:href="@{/library/my-card}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>My Card
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${history.isEmpty()}" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox display-1 mb-3"></i>
+                    <h5>No Borrow History</h5>
+                    <p>You haven't borrowed any books yet.</p>
+                    <a th:href="@{/library}" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>Browse Books
+                    </a>
+                </div>
+                
+                <div th:if="${!history.isEmpty()}" class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrow Date</th>
+                                <th>Return Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Fine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="record : ${history}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img th:src="${record.book.imageUrl}" alt="" 
+                                             class="me-2 rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                                        <div>
+                                            <a th:href="@{/book/{id}(id=${record.book.id})}" class="text-decoration-none">
+                                                <strong th:text="${record.book.title}">Book Title</strong>
+                                            </a>
+                                            <br>
+                                            <small class="text-muted" th:text="${record.book.author?.name}">Author</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${#temporals.format(record.borrowDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                                <td>
+                                    <span th:if="${record.returnDate != null}" 
+                                          th:text="${#temporals.format(record.returnDate, 'dd/MM/yyyy')}">15/01/2024</span>
+                                    <span th:if="${record.returnDate == null}" class="text-muted">-</span>
+                                </td>
+                                <td th:text="${#temporals.format(record.dueDate, 'dd/MM/yyyy')}">14/01/2024</td>
+                                <td>
+                                    <span th:switch="${record.status}">
+                                        <span th:case="'RETURNED'" class="badge bg-success">Returned</span>
+                                        <span th:case="'BORROWED'" class="badge bg-primary">Borrowed</span>
+                                        <span th:case="'OVERDUE'" class="badge bg-danger">Overdue</span>
+                                        <span th:case="'LOST'" class="badge bg-dark">Lost</span>
+                                        <span th:case="*" class="badge bg-secondary" th:text="${record.status}">Status</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${record.fine != null and record.fine.amount > 0}" 
+                                          th:class="'text-' + (${record.fine.paid} ? 'success' : 'danger')">
+                                        <span th:text="${#numbers.formatDecimal(record.fine.amount, 0, 'COMMA', 0, 'POINT')}">50,000</span> VND
+                                        <i th:if="${record.fine.paid}" class="bi bi-check-circle-fill text-success ms-1"></i>
+                                    </span>
+                                    <span th:if="${record.fine == null or record.fine.amount == 0}" class="text-muted">-</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div th:if="${history.totalPages > 1}" class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item" th:class="${history.first} ? 'disabled'">
+                            <a class="page-link" th:href="@{/library/history(page=${history.number - 1})}">Previous</a>
+                        </li>
+                        <li th:each="pageNum : ${#numbers.sequence(0, history.totalPages - 1)}"
+                            class="page-item" th:class="${pageNum == history.number} ? 'active'">
+                            <a class="page-link" th:href="@{/library/history(page=${pageNum})}" 
+                               th:text="${pageNum + 1}">1</a>
+                        </li>
+                        <li class="page-item" th:class="${history.last} ? 'disabled'">
+                            <a class="page-link" th:href="@{/library/history(page=${history.number + 1})}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Statistics Summary -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-book display-4 text-primary mb-2"></i>
+                        <h4 th:text="${history.totalElements}">25</h4>
+                        <p class="text-muted mb-0">Total Books Borrowed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle display-4 text-success mb-2"></i>
+                        <h4>100%</h4>
+                        <p class="text-muted mb-0">Return Rate</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check display-4 text-info mb-2"></i>
+                        <h4>2</h4>
+                        <p class="text-muted mb-0">Avg Days to Return</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

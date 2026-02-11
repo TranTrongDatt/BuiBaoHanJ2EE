@@ -1,47 +1,289 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initialscale=1.0" />
-    <title>My Book List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Danh sách sách - MiniVerse</title>
     <th:block th:replace="~{layout::link-css}"></th:block>
     <th:block th:replace="~{layout::custom-css}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/product.css}"/>
   </head>
   <body>
     <th:block th:replace="~{layout::header}"></th:block>
-    <div class="container">
-      <table class="table">
-        <tr>
-          <th>ID</th>
-          <th>Title</th>
-          <th>Author</th>
-          <th>Price</th>
-          <th>Category</th>
-          <th>Action</th>
-        </tr>
-        <tr th:each="book : ${books}">
-          <td th:text="${book.getId()}"></td>
-          <td th:text="${book.getTitle()}"></td>
-          <td th:text="${book.getAuthor()}"></td>
-          <td th:text="${book.getPrice()}"></td>
-          <td th:text="${book.getCategory()}"></td>
-          <td colspan="2">
-            <a
-              class="btn btn-primary"
-              th:href="@{/books/edit/{id}(id=${book.getId()})}"
-              >Edit</a
-            >
-            <a
-              class="btn btn-danger"
-              th:href="@{/books/delete/{id}(id=${book.getId()})}"
-              onclick="return confirm('Are you sure you want to delete this book?')"
-              >Delete</a
-            >
-          </td>
-        </tr>
-      </table>
-    </div>
+    
+    <!-- PRODUCT PAGE LAYOUT -->
+    <main id="product-page" class="product-page">
+      <div class="product-container">
+        <!-- SIDEBAR - Danh mục -->
+        <aside class="product-sidebar">
+          <h4><i class="bi bi-grid-3x3-gap me-2"></i>Danh mục sách</h4>
+          <ul>
+            <li>
+              <a th:href="@{/books}" th:classappend="${selectedCategoryId == null ? 'active' : ''}">
+                <i class="bi bi-book"></i> Tất cả sách
+              </a>
+            </li>
+            <li th:each="category : ${categories}">
+              <a th:href="@{/books(categoryId=${category.id})}" 
+                 th:classappend="${selectedCategoryId == category.id ? 'active' : ''}">
+                <i class="bi bi-bookmark"></i> <span th:text="${category.name}">Danh mục</span>
+              </a>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="product-main">
+          <!-- Flash Messages -->
+          <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          
+          <!-- Title -->
+          <h2 class="product-title">
+            <span th:text="${selectedCategoryName != null ? selectedCategoryName : 'Tất cả sách'}">Tất cả sách</span>
+            <i class="bi bi-book-half"></i>
+          </h2>
+
+          <!-- Filter Bar -->
+          <div class="product-filter">
+            <!-- Search Box -->
+            <form class="d-flex search-box" th:action="@{/books/search}" method="get">
+              <input
+                class="form-control"
+                type="search"
+                placeholder="Tìm kiếm sách..."
+                aria-label="Search"
+                name="keyword"
+                style="min-width: 200px;"
+              />
+              <button class="btn btn-dark ms-2" type="submit">
+                <i class="bi bi-search"></i>
+              </button>
+            </form>
+            
+            <!-- Price Filter -->
+            <select id="priceFilter" class="form-select form-select-sm" onchange="filterByPrice(this.value)">
+              <option value="">Mức giá</option>
+              <option value="0-50000" th:selected="${priceMin != null and priceMin == 0 and priceMax != null and priceMax == 50000}">Dưới 50,000₫</option>
+              <option value="50000-100000" th:selected="${priceMin != null and priceMin == 50000 and priceMax != null and priceMax == 100000}">50,000₫ - 100,000₫</option>
+              <option value="100000-200000" th:selected="${priceMin != null and priceMin == 100000 and priceMax != null and priceMax == 200000}">100,000₫ - 200,000₫</option>
+              <option value="200000-500000" th:selected="${priceMin != null and priceMin == 200000 and priceMax != null and priceMax == 500000}">200,000₫ - 500,000₫</option>
+              <option value="500000-999999999" th:selected="${priceMin != null and priceMin == 500000}">Trên 500,000₫</option>
+            </select>
+
+            <!-- Sort -->
+            <select id="sortBy" class="form-select form-select-sm" onchange="sortBooks(this.value)">
+              <option value="">Sắp xếp</option>
+              <option value="title" th:selected="${sortBy == 'title'}">Tên A-Z</option>
+              <option value="price" th:selected="${sortBy == 'price'}">Giá tăng dần</option>
+              <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Mới nhất</option>
+            </select>
+
+            <!-- Admin: Add Book Button -->
+            <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin/books/add}" class="btn btn-dark">
+              <i class="bi bi-plus-lg me-1"></i>Thêm sách
+            </a>
+          </div>
+
+          <!-- Product Grid -->
+          <div id="productGrid" class="product-grid">
+            <th:block th:if="${books != null && !books.isEmpty()}">
+              <div th:each="book : ${books}" class="product-card-wrapper">
+                <a th:href="@{/books/{slug}(slug=${book.slug})}" class="product-card-link">
+                  <div class="product-card">
+                    <div class="product-img-container">
+                      <img th:if="${book.coverImage != null && !book.coverImage.isEmpty()}" 
+                           th:src="@{${book.coverImage}}"
+                           th:alt="${book.title}"
+                           class="product-img"
+                           onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"/>
+                      <img th:unless="${book.coverImage != null && !book.coverImage.isEmpty()}" 
+                           th:src="@{/images/banner/hero-books.png}"
+                           th:alt="${book.title}"
+                           class="product-img"/>
+                      <span th:if="${book.originalPrice != null && book.originalPrice > book.price}" 
+                            class="discount-badge-overlay"
+                            th:text="'-' + ${#numbers.formatDecimal((book.originalPrice - book.price) / book.originalPrice * 100, 0, 'NONE', 0, 'NONE')} + '%'">-10%</span>
+                    </div>
+                    <div class="product-body">
+                      <h6 class="product-name" th:text="${book.title}">Tên sách</h6>
+                      <p class="product-author" th:if="${book.author != null}" th:text="${book.author.name}">Tác giả</p>
+                      
+                      <div class="price-block">
+                        <th:block th:if="${book.originalPrice != null && book.originalPrice > book.price}">
+                          <span class="original-price" th:text="${#numbers.formatDecimal(book.originalPrice, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                          <span class="discounted-price" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                        </th:block>
+                        <th:block th:unless="${book.originalPrice != null && book.originalPrice > book.price}">
+                          <span class="current-price" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                        </th:block>
+                      </div>
+                      
+                      <span th:if="${book.status != null}" th:switch="${book.status.name()}">
+                        <span th:case="'AVAILABLE'" class="stock in">Còn hàng</span>
+                        <span th:case="'OUT_OF_STOCK'" class="stock out">Hết hàng</span>
+                        <span th:case="*" class="stock in" th:text="${book.status}">Trạng thái</span>
+                      </span>
+                    </div>
+                  </div>
+                </a>
+                
+                <!-- Action Buttons (outside the link) -->
+                <div class="product-actions">
+                  <button type="button" class="btn btn-add-cart flex-fill btn-ajax-add-cart"
+                          th:data-book-id="${book.id}">
+                    <i class="bi bi-cart-plus"></i> Thêm
+                  </button>
+                  <form th:action="@{/cart/buy-now}" method="post" class="flex-fill">
+                    <input type="hidden" name="bookId" th:value="${book.id}">
+                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-buy-now w-100">
+                      <i class="bi bi-bag-check"></i> Mua ngay
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </th:block>
+            
+            <!-- Empty State -->
+            <div th:if="${books == null || books.isEmpty()}" class="empty-state" style="grid-column: 1 / -1;">
+              <i class="bi bi-inbox"></i>
+              <h5>Chưa có sách nào</h5>
+              <p>Vui lòng quay lại sau hoặc thử danh mục khác</p>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <nav aria-label="Page navigation" class="product-pagination" th:if="${totalPages != null && totalPages > 1}">
+            <ul class="pagination">
+              <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                <a class="page-link" th:href="@{/books(pageNo=${currentPage - 1}, categoryId=${selectedCategoryId}, priceMin=${priceMin}, priceMax=${priceMax}, sortBy=${sortBy})}">
+                  <i class="bi bi-chevron-left"></i>
+                </a>
+              </li>
+              <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                  th:classappend="${currentPage == i} ? 'active'">
+                <a class="page-link" th:href="@{/books(pageNo=${i}, categoryId=${selectedCategoryId}, priceMin=${priceMin}, priceMax=${priceMax}, sortBy=${sortBy})}" th:text="${i + 1}"></a>
+              </li>
+              <li class="page-item" th:classappend="${currentPage >= totalPages - 1} ? 'disabled'">
+                <a class="page-link" th:href="@{/books(pageNo=${currentPage + 1}, categoryId=${selectedCategoryId}, priceMin=${priceMin}, priceMax=${priceMax}, sortBy=${sortBy})}">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </main>
+    
     <th:block th:replace="~{layout::footer}"></th:block>
+    
+    <!-- AI Chatbot -->
+    <th:block th:replace="~{fragments/chatbot :: chatbot}"></th:block>
+    
+    <!-- Load jQuery before custom scripts -->
+    <script th:src="@{/js/jquery-3.7.0.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <script>
+      // CSRF token for AJAX
+      var csrfToken = $('meta[name="_csrf"]').attr('content');
+      var csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+      // AJAX Add to Cart
+      $(document).on('click', '.btn-ajax-add-cart', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var $btn = $(this);
+          var bookId = $btn.data('book-id');
+          var originalHtml = $btn.html();
+          
+          console.log('Add to cart clicked, bookId:', bookId, 'type:', typeof bookId);
+          console.log('CSRF Token:', csrfToken, 'CSRF Header:', csrfHeader);
+          
+          if (!bookId) {
+              alert('Lỗi: Không lấy được ID sách!');
+              return;
+          }
+          
+          // Disable button and show loading
+          $btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Đang thêm...');
+          
+          $.ajax({
+              url: '/cart/add/ajax',
+              type: 'POST',
+              data: { bookId: bookId, quantity: 1 },
+              beforeSend: function(xhr) {
+                  xhr.setRequestHeader(csrfHeader, csrfToken);
+              },
+              success: function(data) {
+                  console.log('AJAX response:', data);
+                  if (data.success) {
+                      // Update cart badge in header
+                      var $badge = $('#cartBadge');
+                      if ($badge.length) {
+                          $badge.text(data.totalQuantity).show();
+                      } else {
+                          // Create badge if it doesn't exist
+                          $('a[href="/cart"] .bi-cart3').after(
+                              '<span class="badge cart-badge" id="cartBadge">' + data.totalQuantity + '</span>'
+                          );
+                      }
+                      
+                      // Show success feedback on button
+                      $btn.html('<i class="bi bi-check-lg"></i> Đã thêm!').removeClass('btn-add-cart').addClass('btn-success');
+                      setTimeout(function() {
+                          $btn.html(originalHtml).removeClass('btn-success').addClass('btn-add-cart').prop('disabled', false);
+                      }, 1500);
+                  } else {
+                      $btn.html(originalHtml).prop('disabled', false);
+                      alert(data.message || 'Có lỗi xảy ra!');
+                  }
+              },
+              error: function() {
+                  $btn.html(originalHtml).prop('disabled', false);
+                  alert('Không thể thêm vào giỏ hàng. Vui lòng thử lại!');
+              }
+          });
+      });
+
+      function filterByPrice(range) {
+        if (range) {
+          const [min, max] = range.split('-');
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set('priceMin', min);
+          currentUrl.searchParams.set('priceMax', max);
+          currentUrl.searchParams.delete('pageNo'); // Reset to first page
+          window.location.href = currentUrl.toString();
+        } else {
+          // Clear price filter
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.delete('priceMin');
+          currentUrl.searchParams.delete('priceMax');
+          currentUrl.searchParams.delete('pageNo');
+          window.location.href = currentUrl.toString();
+        }
+      }
+      
+      function sortBooks(sortBy) {
+        if (sortBy) {
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set('sortBy', sortBy);
+          window.location.href = currentUrl.toString();
+        }
+      }
+    </script>
   </body>
 </html>

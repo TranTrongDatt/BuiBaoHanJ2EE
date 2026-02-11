@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Lỗi máy chủ | MiniVerse</title>
+    <th:block th:replace="~{layout::link-css}"></th:block>
+    <th:block th:replace="~{layout::custom-css}"></th:block>
+    <style>
+        .error-page {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #dc2626;
+            line-height: 1;
+        }
+        .error-icon {
+            font-size: 6rem;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <th:block th:replace="~{layout::header}"></th:block>
+    
+    <div class="error-page">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-exclamation-octagon error-icon"></i>
+                    </div>
+                    <h1 class="error-code">500</h1>
+                    <h2 class="mb-3">Lỗi máy chủ</h2>
+                    <p class="text-muted mb-4">
+                        Đã xảy ra lỗi trong quá trình xử lý yêu cầu của bạn. 
+                        Đội ngũ kỹ thuật đã được thông báo và đang xử lý.
+                    </p>
+                    
+                    <div th:if="${errorId}" class="alert alert-secondary mb-4">
+                        <small>Mã lỗi: <code th:text="${errorId}">ERR-XXX</code></small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <a href="javascript:location.reload()" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Thử lại
+                        </a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="bi bi-house me-2"></i>Trang chủ
+                        </a>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="text-muted small">
+                        Nếu lỗi tiếp tục xảy ra, vui lòng 
+                        <a href="mailto:support@miniverse.com">liên hệ hỗ trợ</a> 
+                        kèm mã lỗi ở trên.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <th:block th:replace="~{layout::footer}"></th:block>
+</body>
+</html>
