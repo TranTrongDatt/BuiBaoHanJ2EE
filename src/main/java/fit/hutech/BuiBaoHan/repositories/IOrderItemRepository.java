@@ -2,6 +2,7 @@ package fit.hutech.BuiBaoHan.repositories;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -44,7 +45,6 @@ public interface IOrderItemRepository extends JpaRepository<OrderItem, Long> {
            "AND YEAR(o.created_at) = YEAR(CURDATE()) " +
            "AND MONTH(o.created_at) = MONTH(CURDATE()) " +
            "GROUP BY c.id, c.name " +
-           "ORDER BY total DESC " +
-           "LIMIT :limit", nativeQuery = true)
-    List<Object[]> findBestSellingCategoriesInMonth(@Param("limit") int limit);
+           "ORDER BY total DESC", nativeQuery = true)
+    List<Object[]> findBestSellingCategoriesInMonth(Pageable pageable);
 }

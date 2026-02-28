@@ -510,14 +510,11 @@ public class OrderService {
                 Long count = ((Number) row[1]).longValue();
                 
                 // Map to simplified categories
-                if ("COD".equals(method)) {
-                    stats.put("COD", stats.get("COD") + count);
-                } else if ("VIETQR".equals(method) || "BANK_TRANSFER".equals(method)) {
-                    stats.put("VIETQR", stats.get("VIETQR") + count);
-                } else if ("MOMO".equals(method) || "ZALOPAY".equals(method) || "VNPAY".equals(method)) {
-                    stats.put("OTHER", stats.get("OTHER") + count);
-                } else {
-                    stats.put("OTHER", stats.get("OTHER") + count);
+                switch (method) {
+                    case "COD" -> stats.put("COD", stats.get("COD") + count);
+                    case "VIETQR", "BANK_TRANSFER" -> stats.put("VIETQR", stats.get("VIETQR") + count);
+                    case "MOMO", "ZALOPAY", "VNPAY" -> stats.put("OTHER", stats.get("OTHER") + count);
+                    default -> stats.put("OTHER", stats.get("OTHER") + count);
                 }
             }
         }
@@ -538,7 +535,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getBestSellingCategoriesInMonth(int limit) {
-        List<Object[]> results = orderItemRepository.findBestSellingCategoriesInMonth(limit);
+        List<Object[]> results = orderItemRepository.findBestSellingCategoriesInMonth(PageRequest.of(0, limit));
         
         List<String> categoryNames = new ArrayList<>();
         List<Long> categorySoldCounts = new ArrayList<>();
@@ -560,7 +557,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getTopCustomers(int limit) {
-        List<Object[]> results = orderRepository.findTopCustomersByCompletedOrders(limit);
+        List<Object[]> results = orderRepository.findTopCustomersByCompletedOrders(PageRequest.of(0, limit));
         List<Map<String, Object>> customers = new ArrayList<>();
         
         for (int i = 0; i < results.size(); i++) {
@@ -1143,7 +1140,8 @@ public class OrderService {
             if (book.getStockQuantity() != null) {
                 book.setStockQuantity(book.getStockQuantity() - cartItem.getQuantity());
             }
-            long sold = book.getSoldCount() != null ? book.getSoldCount() : 0L;
+            Long soldCount = book.getSoldCount();
+            long sold = soldCount != null ? soldCount : 0L;
             book.setSoldCount(sold + cartItem.getQuantity());
             bookRepository.save(book);
         }
@@ -1241,7 +1239,8 @@ public class OrderService {
             if (book.getStockQuantity() != null) {
                 book.setStockQuantity(book.getStockQuantity() - cartItem.getQuantity());
             }
-            long sold = book.getSoldCount() != null ? book.getSoldCount() : 0L;
+            Long soldCount = book.getSoldCount();
+            long sold = soldCount != null ? soldCount : 0L;
             book.setSoldCount(sold + cartItem.getQuantity());
             bookRepository.save(book);
         }

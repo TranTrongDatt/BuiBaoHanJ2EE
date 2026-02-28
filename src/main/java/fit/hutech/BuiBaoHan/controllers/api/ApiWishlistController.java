@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fit.hutech.BuiBaoHan.dto.ApiResponse;
 import fit.hutech.BuiBaoHan.dto.PageResponse;
-import fit.hutech.BuiBaoHan.entities.User;
 import fit.hutech.BuiBaoHan.entities.Wishlist;
 import fit.hutech.BuiBaoHan.security.AuthResolver;
 import fit.hutech.BuiBaoHan.services.CartService;

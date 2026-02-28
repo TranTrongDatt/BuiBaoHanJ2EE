@@ -156,7 +156,6 @@ public interface IOrderRepository extends JpaRepository<Order, Long> {
            "WHERE o.status IN ('DELIVERED', 'COMPLETED') " +
            "GROUP BY u.id, u.username, u.full_name, u.avatar " +
            "HAVING COUNT(o.id) >= 1 " +
-           "ORDER BY order_count DESC " +
-           "LIMIT :limit", nativeQuery = true)
-    List<Object[]> findTopCustomersByCompletedOrders(@Param("limit") int limit);
+           "ORDER BY order_count DESC", nativeQuery = true)
+    List<Object[]> findTopCustomersByCompletedOrders(Pageable pageable);
 }

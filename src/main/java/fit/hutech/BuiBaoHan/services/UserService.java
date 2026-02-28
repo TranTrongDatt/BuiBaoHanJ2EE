@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -422,7 +423,7 @@ public class UserService implements UserDetailsService {
      */
     @Transactional(readOnly = true)
     public List<User> getRecentUsers(int limit) {
-        return userRepository.findRecentUsers(limit);
+        return userRepository.findRecentUsers(PageRequest.of(0, limit));
     }
 
     // ==================== AdminUserController Support Methods ====================

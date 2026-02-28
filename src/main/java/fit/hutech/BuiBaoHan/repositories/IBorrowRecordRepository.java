@@ -63,23 +63,23 @@ public interface IBorrowRecordRepository extends JpaRepository<BorrowRecord, Lon
     
     @Query(value = "SELECT b.id, b.title, COUNT(d.id) as borrow_count FROM book b " +
            "JOIN borrow_record_detail d ON b.id = d.book_id " +
-           "GROUP BY b.id, b.title ORDER BY borrow_count DESC LIMIT :limit", nativeQuery = true)
-    List<Object[]> findTopBorrowedBooks(@Param("limit") int limit);
+           "GROUP BY b.id, b.title ORDER BY borrow_count DESC", nativeQuery = true)
+    List<Object[]> findTopBorrowedBooks(Pageable pageable);
     
     @Query(value = "SELECT b.id, b.title, COUNT(d.id) as borrow_count FROM book b " +
            "JOIN borrow_record_detail d ON b.id = d.book_id " +
            "JOIN borrow_record br ON d.borrow_record_id = br.id " +
            "WHERE br.borrow_date BETWEEN :start AND :end " +
-           "GROUP BY b.id, b.title ORDER BY borrow_count DESC LIMIT :limit", nativeQuery = true)
+           "GROUP BY b.id, b.title ORDER BY borrow_count DESC", nativeQuery = true)
     List<Object[]> findTopBorrowedBooksInPeriod(@Param("start") LocalDateTime start, 
                                                  @Param("end") LocalDateTime end, 
-                                                 @Param("limit") int limit);
+                                                 Pageable pageable);
     
     @Query(value = "SELECT u.id, u.username, COUNT(br.id) as borrow_count FROM user u " +
            "JOIN library_card lc ON u.id = lc.user_id " +
            "JOIN borrow_record br ON lc.id = br.library_card_id " +
-           "GROUP BY u.id, u.username ORDER BY borrow_count DESC LIMIT :limit", nativeQuery = true)
-    List<Object[]> findTopBorrowers(@Param("limit") int limit);
+           "GROUP BY u.id, u.username ORDER BY borrow_count DESC", nativeQuery = true)
+    List<Object[]> findTopBorrowers(Pageable pageable);
     
     @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.status = 'BORROWING' AND br.dueDate < :date")
     long countOverdueBeforeDate(@Param("date") LocalDate date);

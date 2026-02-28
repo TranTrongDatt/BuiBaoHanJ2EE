@@ -56,8 +56,8 @@ public interface IAIChatMessageRepository extends JpaRepository<AIChatMessage, L
     /**
      * Lấy N messages gần nhất của session
      */
-    @Query(value = "SELECT * FROM ai_chat_message m WHERE m.session_id = :sessionId ORDER BY m.created_at DESC LIMIT :limit", nativeQuery = true)
-    List<AIChatMessage> findRecentBySessionId(@Param("sessionId") Long sessionId, @Param("limit") int limit);
+    @Query(value = "SELECT * FROM ai_chat_message m WHERE m.session_id = :sessionId ORDER BY m.created_at DESC", nativeQuery = true)
+    List<AIChatMessage> findRecentBySessionId(@Param("sessionId") Long sessionId, Pageable pageable);
 
     /**
      * Xóa tất cả messages của session

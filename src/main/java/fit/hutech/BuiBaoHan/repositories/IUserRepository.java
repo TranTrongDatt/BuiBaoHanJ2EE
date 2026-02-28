@@ -47,8 +47,8 @@ public interface IUserRepository extends JpaRepository<User, Long> {
     
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query(value = "SELECT * FROM user ORDER BY created_at DESC LIMIT :limit", nativeQuery = true)
-    List<User> findRecentUsers(@Param("limit") int limit);
+    @Query(value = "SELECT * FROM user ORDER BY created_at DESC", nativeQuery = true)
+    List<User> findRecentUsers(Pageable pageable);
     
     // ==================== Dashboard methods ====================
     

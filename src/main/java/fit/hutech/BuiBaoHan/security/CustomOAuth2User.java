@@ -1,7 +1,6 @@
 package fit.hutech.BuiBaoHan.security;
 
 import java.io.Serial;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +26,7 @@ import fit.hutech.BuiBaoHan.entities.User;
  * 
  * Implements Serializable để có thể lưu vào session mà không gây lag.
  */
-public class CustomOAuth2User implements OAuth2User, UserDetails, Serializable {
+public class CustomOAuth2User implements OAuth2User, UserDetails {
 
     @Serial
     private static final long serialVersionUID = 1L;

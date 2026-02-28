@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +85,7 @@ public class LibraryReportService {
      * Top sách được mượn nhiều nhất
      */
     public List<Map<String, Object>> getTopBorrowedBooks(int limit) {
-        return borrowRecordRepository.findTopBorrowedBooks(limit).stream()
+        return borrowRecordRepository.findTopBorrowedBooks(PageRequest.of(0, limit)).stream()
                 .map(row -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("bookId", row[0]);
@@ -99,7 +100,7 @@ public class LibraryReportService {
      * Top người mượn nhiều nhất
      */
     public List<Map<String, Object>> getTopBorrowers(int limit) {
-        return borrowRecordRepository.findTopBorrowers(limit).stream()
+        return borrowRecordRepository.findTopBorrowers(PageRequest.of(0, limit)).stream()
                 .map(row -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("userId", row[0]);
@@ -239,7 +240,7 @@ public class LibraryReportService {
         report.put("fineReport", getFineReport(yearMonth.atDay(1), yearMonth.atEndOfMonth()));
         
         // Top sách
-        report.put("topBooks", borrowRecordRepository.findTopBorrowedBooksInPeriod(start, end, 10));
+        report.put("topBooks", borrowRecordRepository.findTopBorrowedBooksInPeriod(start, end, PageRequest.of(0, 10)));
         
         log.info("Generated monthly report for {}", yearMonth);
         return report;
@@ -289,7 +290,7 @@ public class LibraryReportService {
         report.put("fineReport", getFineReport(startDate, endDate));
         
         // Top books in period
-        report.put("topBooks", borrowRecordRepository.findTopBorrowedBooksInPeriod(start, end, 10));
+        report.put("topBooks", borrowRecordRepository.findTopBorrowedBooksInPeriod(start, end, PageRequest.of(0, 10)));
         
         return report;
     }
@@ -298,7 +299,7 @@ public class LibraryReportService {
      * Get top borrowed books for dashboard (returns TopItem list)
      */
     public List<DashboardStatsResponse.TopItem> getTopBorrowedBooksAsTopItems(int limit) {
-        return borrowRecordRepository.findTopBorrowedBooks(limit).stream()
+        return borrowRecordRepository.findTopBorrowedBooks(PageRequest.of(0, limit)).stream()
                 .map(row -> new DashboardStatsResponse.TopItem(
                         ((Number) row[0]).longValue(),
                         (String) row[1],
@@ -375,7 +376,7 @@ public class LibraryReportService {
         return borrowRecordRepository.findTopBorrowedBooksInPeriod(
                 startDate.atStartOfDay(),
                 endDate.atTime(23, 59, 59),
-                limit
+                PageRequest.of(0, limit)
         ).stream()
                 .map(row -> new DashboardStatsResponse.TopItem(
                         ((Number) row[0]).longValue(),

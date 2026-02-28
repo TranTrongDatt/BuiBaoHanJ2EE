@@ -429,7 +429,7 @@ public class AIChatService {
         messageRepository.save(userMsg);
 
         // Lấy context (10 messages gần nhất)
-        List<AIChatMessage> history = messageRepository.findRecentBySessionId(sessionId, 10);
+        List<AIChatMessage> history = messageRepository.findRecentBySessionId(sessionId, PageRequest.of(0, 10));
 
         // Gọi AI API với dynamic system prompt chứa dữ liệu sách
         String dynamicPrompt = buildDynamicSystemPrompt(userMessage);
@@ -881,12 +881,14 @@ public class AIChatService {
 
         // Mượn sách
         if (lowerMsg.contains("mượn") || lowerMsg.contains("thư viện") || lowerMsg.contains("library")) {
-            return "Bạn muốn mượn sách hả? Cool vậy! \n" +
-                    "Để mượn sách online, bạn cần:\n" +
-                    "1. Đăng ký thẻ thư viện MiniVerse\n" +
-                    "2. Tìm sách muốn mượn và bấm 'Mượn sách'\n" +
-                    "3. Mượn tối đa 5 cuốn, thời hạn 14 ngày, gia hạn 2 lần nha!\n" +
-                    "Cần mình tìm sách gì để mượn không? ";
+            return """
+                    Bạn muốn mượn sách hả? Cool vậy!
+                    Để mượn sách online, bạn cần:
+                    1. Đăng ký thẻ thư viện MiniVerse
+                    2. Tìm sách muốn mượn và bấm 'Mượn sách'
+                    3. Mượn tối đa 5 cuốn, thời hạn 14 ngày, gia hạn 2 lần nha!
+                    Cần mình tìm sách gì để mượn không?
+                    """;
         }
 
         // Đơn hàng

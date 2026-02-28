@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service quản lý upload và lưu trữ file
+ * Hỗ trợ cả Local Storage và Cloudinary Cloud Storage
  */
 @Service
 @Slf4j
@@ -33,6 +35,13 @@ public class FileStorageService {
 
     @Value("${app.upload.max-size:10485760}") // 10MB default
     private long maxFileSize;
+    
+    @Value("${cloudinary.enabled:false}")
+    private boolean cloudinaryEnabled;
+    
+    // Optional - chỉ inject khi Cloudinary được enable
+    @Autowired(required = false)
+    private CloudinaryService cloudinaryService;
 
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
             "image/jpeg", "image/png", "image/gif", "image/webp"
@@ -72,14 +81,88 @@ public class FileStorageService {
     }
 
     /**
-     * Upload file ảnh
+     * Upload file ảnh - tự động chọn Local hoặc Cloudinary
      * @param file File upload
-     * @param subDir Thư mục con (images, avatars, covers)
-     * @return Đường dẫn file đã lưu
+     * @param subDir Thư mục con (images, avatars, covers, books, blog)
+     * @return Đường dẫn/URL file đã lưu
      */
     public String storeImage(MultipartFile file, String subDir) throws IOException {
         validateFile(file, ALLOWED_IMAGE_TYPES);
+        
+        // Sử dụng Cloudinary nếu được enable và service available
+        if (isCloudinaryAvailable()) {
+            log.debug("Uploading to Cloudinary: {}", file.getOriginalFilename());
+            return cloudinaryService.uploadImage(file, subDir);
+        }
+        
+        // Fallback to local storage
         return store(file, subDir);
+    }
+    
+    /**
+     * Upload avatar với auto-resize 200x200
+     */
+    public String storeAvatar(MultipartFile file) throws IOException {
+        validateFile(file, ALLOWED_IMAGE_TYPES);
+        
+        if (isCloudinaryAvailable()) {
+            return cloudinaryService.uploadAvatar(file);
+        }
+        
+        return store(file, "avatars");
+    }
+    
+    /**
+     * Upload ảnh bìa sách với auto-resize 400x600
+     */
+    public String storeBookCover(MultipartFile file) throws IOException {
+        validateFile(file, ALLOWED_IMAGE_TYPES);
+        
+        if (isCloudinaryAvailable()) {
+            return cloudinaryService.uploadBookCover(file);
+        }
+        
+        return store(file, "books");
+    }
+    
+    /**
+     * Upload ảnh blog với auto-resize 800x450
+     */
+    public String storeBlogImage(MultipartFile file) throws IOException {
+        validateFile(file, ALLOWED_IMAGE_TYPES);
+        
+        if (isCloudinaryAvailable()) {
+            return cloudinaryService.uploadBlogImage(file);
+        }
+        
+        return store(file, "blog");
+    }
+    
+    /**
+     * Upload ảnh category với auto-resize 300x300
+     */
+    public String storeCategoryImage(MultipartFile file) throws IOException {
+        validateFile(file, ALLOWED_IMAGE_TYPES);
+        
+        if (isCloudinaryAvailable()) {
+            return cloudinaryService.uploadCategoryImage(file);
+        }
+        
+        return store(file, "categories");
+    }
+    
+    /**
+     * Check if Cloudinary is available and enabled
+     */
+    public boolean isCloudinaryAvailable() {
+        return cloudinaryEnabled && cloudinaryService != null;
+    }
+    
+    /**
+     * Get storage mode info
+     */
+    public String getStorageMode() {
+        return isCloudinaryAvailable() ? "Cloudinary (Cloud)" : "Local Storage";
     }
 
     /**
@@ -132,15 +215,42 @@ public class FileStorageService {
     }
 
     /**
-     * Xóa file
+     * Xóa file - hỗ trợ cả Local và Cloudinary
+     * @param filePathOrUrl Đường dẫn local hoặc Cloudinary URL
+     * @return true nếu xóa thành công
      */
-    public boolean delete(String filename) {
+    public boolean delete(String filePathOrUrl) {
+        if (filePathOrUrl == null || filePathOrUrl.isBlank()) {
+            return false;
+        }
+        
+        // Kiểm tra nếu là Cloudinary URL
+        if (isCloudinaryAvailable() && cloudinaryService.isCloudinaryUrl(filePathOrUrl)) {
+            return cloudinaryService.deleteImageByUrl(filePathOrUrl);
+        }
+        
+        // Xóa file local
         try {
+            // Handle both /uploads/xxx and xxx formats
+            String filename = filePathOrUrl;
+            if (filename.startsWith("/uploads/")) {
+                filename = filename.substring("/uploads/".length());
+            }
             Path file = rootLocation.resolve(filename);
             return Files.deleteIfExists(file);
         } catch (IOException e) {
-            log.error("Could not delete file: {}", filename, e);
+            log.error("Could not delete file: {}", filePathOrUrl, e);
             return false;
+        }
+    }
+    
+    /**
+     * Xóa file cũ khi update (chỉ xóa nếu file mới khác file cũ)
+     */
+    public void deleteOldFileIfNeeded(String oldPath, String newPath) {
+        if (oldPath != null && !oldPath.isBlank() && !oldPath.equals(newPath)) {
+            delete(oldPath);
+            log.debug("Deleted old file: {}", oldPath);
         }
     }
 

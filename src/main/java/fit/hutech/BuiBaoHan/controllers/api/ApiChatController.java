@@ -25,7 +25,6 @@ import fit.hutech.BuiBaoHan.entities.Book;
 import fit.hutech.BuiBaoHan.entities.ChatMessage;
 import fit.hutech.BuiBaoHan.entities.ChatRoom;
 import fit.hutech.BuiBaoHan.entities.User;
-import fit.hutech.BuiBaoHan.repositories.IUserRepository;
 import fit.hutech.BuiBaoHan.security.AuthResolver;
 import fit.hutech.BuiBaoHan.services.AIChatService;
 import fit.hutech.BuiBaoHan.services.BlogChatService;
@@ -43,7 +42,6 @@ public class ApiChatController {
 
     private final AIChatService aiChatService;
     private final BlogChatService blogChatService;
-    private final IUserRepository userRepository;
     private final AuthResolver authResolver;
 
     // ==================== AI Chat Endpoints ====================

@@ -52,7 +52,6 @@ public class SecurityConfig {
     @Value("${jwt.cookie.refresh-name:MV_REFRESH_TOKEN}")
     private String refreshTokenCookieName;
     
-    @Autowired
     public SecurityConfig(OAuthService oAuthService, IUserRepository userRepository) {
         this.oAuthService = oAuthService;
         this.userRepository = userRepository;
