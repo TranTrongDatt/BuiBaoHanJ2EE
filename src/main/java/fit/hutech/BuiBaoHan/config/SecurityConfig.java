@@ -173,6 +173,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/error", "/403", "/webjars/**").permitAll()
+                        .requestMatchers("/actuator/**", "/actuator/health/**").permitAll()
                         .requestMatchers("/register", "/login", "/oauth/**").permitAll()
                         .requestMatchers("/forgot-password", "/reset-password").permitAll()
                         // Debug endpoint - CHỈ DÙNG CHO DEV
@@ -183,6 +184,7 @@ public class SecurityConfig {
                         .requestMatchers("/chat/**").authenticated()
                         // NOTE: /api/chat/** is handled by apiFilterChain with permitAll()
                         .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers("/shipper/**").hasAnyAuthority("ROLE_SHIPPER", "ROLE_ADMIN")
                         .requestMatchers("/books/edit/**", "/books/add", "/books/delete/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers("/books/**", "/cart/**", "/categories/**", "/").permitAll()
