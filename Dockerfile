@@ -26,6 +26,9 @@ COPY --from=builder /app/target/*.jar app.jar
 # Expose port (Railway will override via PORT env)
 EXPOSE 9090
 
+# Default to prod profile (Railway can override via env var)
+ENV SPRING_PROFILES_ACTIVE=prod
+
 # JVM optimizations for containers
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
 
