@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Logs
+logs/
+*.log
+compile_*.txt
+spring-boot-output.log
+
+# Uploads (local only - production uses Cloudinary)
+uploads/
+
+# Docs
+HELP.md
+ROADMAP.md
+README.md
+
+# Secrets
+application-secrets.properties
+**/application-secrets.properties
+
+# OS
+.DS_Store
+Thumbs.db
