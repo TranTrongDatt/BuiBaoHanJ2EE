@@ -173,7 +173,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/error", "/403", "/webjars/**").permitAll()
-                        .requestMatchers("/actuator/**", "/actuator/health/**").permitAll()
+                        .requestMatchers("/health", "/actuator/**", "/actuator/health/**").permitAll()
                         .requestMatchers("/register", "/login", "/oauth/**").permitAll()
                         .requestMatchers("/forgot-password", "/reset-password").permitAll()
                         // Debug endpoint - CHỈ DÙNG CHO DEV
