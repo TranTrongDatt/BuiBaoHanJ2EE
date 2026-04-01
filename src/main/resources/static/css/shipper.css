@@ -1,0 +1,660 @@
+/**
+ * Shipper Dashboard CSS
+ * MiniVerse E-commerce Platform
+ */
+
+/* ==================== Variables ==================== */
+:root {
+    --shipper-primary: #17a2b8;
+    --shipper-primary-dark: #138496;
+    --shipper-primary-light: #63d0e3;
+    --shipper-secondary: #6c757d;
+    --shipper-success: #28a745;
+    --shipper-danger: #dc3545;
+    --shipper-warning: #ffc107;
+    --shipper-info: #17a2b8;
+    
+    --shipper-sidebar-width: 260px;
+    --shipper-topbar-height: 60px;
+    --shipper-bg: #f5f7fa;
+    --shipper-card-bg: #ffffff;
+    --shipper-text: #2d3748;
+    --shipper-text-muted: #718096;
+    --shipper-border: #e2e8f0;
+}
+
+/* ==================== Base Styles ==================== */
+.shipper-body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--shipper-bg);
+    color: var(--shipper-text);
+    margin: 0;
+    padding: 0;
+}
+
+.shipper-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ==================== Sidebar ==================== */
+.shipper-sidebar {
+    width: var(--shipper-sidebar-width);
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #fff;
+}
+
+.sidebar-logo-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.sidebar-brand-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.sidebar-brand-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--shipper-primary);
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+    flex: 1;
+    padding: 20px 0;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-item {
+    margin-bottom: 5px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-left-color: var(--shipper-primary);
+}
+
+.sidebar-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+/* Status Toggle */
+.sidebar-status {
+    padding: 15px 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.status-label {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.status-toggle {
+    display: flex;
+    gap: 10px;
+}
+
+.status-btn {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.sidebar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--shipper-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.sidebar-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sidebar-user-avatar i {
+    font-size: 1.5rem;
+}
+
+.sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-user-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.sidebar-user-role {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.sidebar-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar-back-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+/* ==================== Main Content ==================== */
+.shipper-main {
+    flex: 1;
+    margin-left: var(--shipper-sidebar-width);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Bar */
+.shipper-topbar {
+    height: var(--shipper-topbar-height);
+    background: #fff;
+    border-bottom: 1px solid var(--shipper-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.topbar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.topbar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.shipper-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff3cd;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.shipper-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.shipper-status-badge.ONLINE {
+    background: #d4edda;
+    color: #155724;
+}
+
+.shipper-status-badge.OFFLINE {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.shipper-status-badge.BUSY {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.shipper-status-badge.ON_BREAK {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.shipper-status-badge i {
+    font-size: 0.6rem;
+}
+
+.topbar-welcome {
+    font-size: 0.9rem;
+    color: var(--shipper-text-muted);
+}
+
+.topbar-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--shipper-danger);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.topbar-logout-btn:hover {
+    background: #c82333;
+}
+
+/* Content Area */
+.shipper-content {
+    flex: 1;
+    padding: 24px;
+}
+
+/* ==================== Stat Cards ==================== */
+.shipper-stat-card {
+    background: var(--shipper-card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.shipper-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon.primary {
+    background: linear-gradient(135deg, var(--shipper-primary), var(--shipper-primary-dark));
+    color: #fff;
+}
+
+.stat-icon.success {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: #fff;
+}
+
+.stat-icon.warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #fff;
+}
+
+.stat-icon.info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: #fff;
+}
+
+.stat-icon.danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: #fff;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--shipper-text);
+}
+
+.stat-value small {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--shipper-text-muted);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--shipper-text-muted);
+}
+
+.stat-link {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--shipper-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--shipper-primary);
+    transition: all 0.3s ease;
+}
+
+.stat-link:hover {
+    background: var(--shipper-primary);
+    color: #fff;
+}
+
+/* ==================== Cards ==================== */
+.shipper-card {
+    background: var(--shipper-card-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.shipper-card .card-header {
+    background: var(--shipper-bg);
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--shipper-border);
+}
+
+.shipper-card .card-body {
+    padding: 20px;
+}
+
+/* Performance Items */
+.performance-item {
+    padding: 10px;
+}
+
+.perf-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.perf-label {
+    font-size: 0.85rem;
+    color: var(--shipper-text-muted);
+}
+
+/* Quick Action Buttons */
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--shipper-bg);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--shipper-text);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.quick-action-btn:hover {
+    background: var(--shipper-primary);
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+.quick-action-btn i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.quick-action-btn span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* ==================== Punch Cards ==================== */
+.punch-card {
+    background: var(--shipper-card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.punch-card.completed {
+    border-color: var(--shipper-success);
+    background: #f8fff9;
+}
+
+.punch-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 15px;
+}
+
+.punch-icon.check-in {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: #fff;
+}
+
+.punch-icon.break-start {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #fff;
+}
+
+.punch-icon.break-end {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: #fff;
+}
+
+.punch-icon.check-out {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: #fff;
+}
+
+.punch-card h5 {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.punch-time {
+    margin-top: 15px;
+    padding: 10px;
+    background: #e8f5e9;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.punch-time i {
+    margin-right: 5px;
+}
+
+/* ==================== Current Time Display ==================== */
+.current-time-display {
+    padding: 20px;
+}
+
+.current-time-display span {
+    background: linear-gradient(135deg, var(--shipper-primary), var(--shipper-primary-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ==================== Stat Items ==================== */
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-item .stat-label {
+    font-size: 0.8rem;
+    color: var(--shipper-text-muted);
+    margin-bottom: 5px;
+}
+
+.stat-item .stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ==================== Delivery Card ==================== */
+.delivery-card {
+    border: 2px solid var(--shipper-primary);
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 991.98px) {
+    .shipper-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .shipper-sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .shipper-main {
+        margin-left: 0;
+    }
+    
+    .topbar-toggle {
+        display: block;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+        display: none;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .shipper-content {
+        padding: 15px;
+    }
+    
+    .topbar-right {
+        gap: 10px;
+    }
+    
+    .topbar-welcome {
+        display: none;
+    }
+    
+    .shipper-rating,
+    .shipper-status-badge {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+}

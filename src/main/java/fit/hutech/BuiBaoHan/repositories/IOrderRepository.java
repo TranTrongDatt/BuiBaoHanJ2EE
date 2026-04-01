@@ -158,4 +158,53 @@ public interface IOrderRepository extends JpaRepository<Order, Long> {
            "HAVING COUNT(o.id) >= 1 " +
            "ORDER BY order_count DESC", nativeQuery = true)
     List<Object[]> findTopCustomersByCompletedOrders(Pageable pageable);
+
+    // ==================== Shipper queries ====================
+
+    /**
+     * Find orders assigned to a shipper
+     */
+    @Query("SELECT o FROM Order o WHERE o.shipper.id = :shipperId ORDER BY o.createdAt DESC")
+    Page<Order> findByShipperId(@Param("shipperId") Long shipperId, Pageable pageable);
+
+    /**
+     * Find orders assigned to a shipper with status
+     */
+    @Query("SELECT o FROM Order o WHERE o.shipper.id = :shipperId AND o.status = :status ORDER BY o.createdAt DESC")
+    Page<Order> findByShipperIdAndStatus(@Param("shipperId") Long shipperId, 
+                                          @Param("status") OrderStatus status, 
+                                          Pageable pageable);
+
+    /**
+     * Count orders by shipper and status
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.shipper.id = :shipperId AND o.status = :status")
+    long countByShipperIdAndStatus(@Param("shipperId") Long shipperId, 
+                                    @Param("status") OrderStatus status);
+
+    /**
+     * Find orders with no shipper assigned (available for pickup)
+     */
+    @Query("SELECT o FROM Order o WHERE o.status = :status AND o.shipper IS NULL ORDER BY o.createdAt ASC")
+    Page<Order> findByStatusAndShipperIsNull(@Param("status") OrderStatus status, Pageable pageable);
+
+    /**
+     * Count today's deliveries by shipper
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.shipper.id = :shipperId " +
+           "AND o.status = 'DELIVERED' AND DATE(o.deliveryCompletedAt) = CURRENT_DATE")
+    long countTodayDeliveriesByShipper(@Param("shipperId") Long shipperId);
+
+    /**
+     * Calculate today's delivery earnings for shipper
+     */
+    @Query("SELECT COALESCE(SUM(o.shipperEarning), 0) FROM Order o WHERE o.shipper.id = :shipperId " +
+           "AND o.status = 'DELIVERED' AND DATE(o.deliveryCompletedAt) = CURRENT_DATE")
+    Double getTodayDeliveryEarnings(@Param("shipperId") Long shipperId);
+
+    /**
+     * Find orders currently being delivered by shipper
+     */
+    @Query("SELECT o FROM Order o WHERE o.shipper.id = :shipperId AND o.status = 'SHIPPING'")
+    List<Order> findCurrentDeliveriesByShipper(@Param("shipperId") Long shipperId);
 }

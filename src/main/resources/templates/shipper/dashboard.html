@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{shipper/layout :: head}"></th:block>
+</head>
+<body class="shipper-body">
+    <div class="shipper-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{shipper/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleShipperSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="shipper-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{shipper/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="shipper-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Bảng điều khiển Shipper</h2>
+                        <p class="text-muted mb-0">Tổng quan hoạt động của bạn</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Làm mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Row 1: Today's Stats -->
+                <div class="row g-4 mb-4">
+                    <!-- Today Attendance -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${todayAttendance != null ? todayAttendance.status.displayName : 'Chưa chấm công'}">Chưa chấm công</div>
+                                <div class="stat-label">Chấm công hôm nay</div>
+                            </div>
+                            <a th:href="@{/shipper/attendance}" class="stat-link">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Today Work Hours -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon success">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">
+                                    <span th:text="${todayAttendance != null ? #numbers.formatDecimal(todayAttendance.actualWorkHours ?: 0, 1, 1) : '0.0'}">0.0</span>
+                                    <small>giờ</small>
+                                </div>
+                                <div class="stat-label">Giờ làm hôm nay</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Today Deliveries -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon info">
+                                <i class="bi bi-truck"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${todayDeliveries ?: 0}">0</div>
+                                <div class="stat-label">Đơn giao hôm nay</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Today Earnings -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${todayAttendance != null ? #numbers.formatDecimal(todayAttendance.netEarning ?: 0, 0, 'COMMA', 0, 'POINT') : '0'}">0</div>
+                                <div class="stat-label">Thu nhập hôm nay (VNĐ)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Row 2: Monthly Stats -->
+                <div class="row g-4 mb-4">
+                    <!-- Month Work Days -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-calendar-week"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${monthWorkDays ?: 0}">0</div>
+                                <div class="stat-label">Ngày công tháng này</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Total Hours -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon success">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">
+                                    <span th:text="${monthTotalHours != null ? #numbers.formatDecimal(monthTotalHours, 1, 1) : '0.0'}">0.0</span>
+                                    <small>giờ</small>
+                                </div>
+                                <div class="stat-label">Tổng giờ làm tháng này</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Earnings -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${monthEarnings != null ? #numbers.formatDecimal(monthEarnings, 0, 'COMMA', 0, 'POINT') : '0'}">0</div>
+                                <div class="stat-label">Thu nhập tháng này (VNĐ)</div>
+                            </div>
+                            <a th:href="@{/shipper/income}" class="stat-link">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Penalties This Month -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${monthPenalties != null ? #numbers.formatDecimal(monthPenalties, 0, 'COMMA', 0, 'POINT') : '0'}">0</div>
+                                <div class="stat-label">Tổng phạt tháng này (VNĐ)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Performance & Quick Actions -->
+                <div class="row g-4 mb-4">
+                    <!-- Performance Card -->
+                    <div class="col-lg-6">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Hiệu suất giao hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="performance-item">
+                                            <div class="perf-value text-primary" th:text="${profile.totalDeliveries}">0</div>
+                                            <div class="perf-label">Tổng đơn</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="performance-item">
+                                            <div class="perf-value text-success" th:text="${profile.successfulDeliveries}">0</div>
+                                            <div class="perf-label">Thành công</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="performance-item">
+                                            <div class="perf-value text-danger" th:text="${profile.failedDeliveries}">0</div>
+                                            <div class="perf-label">Thất bại</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Tỷ lệ thành công</span>
+                                    <span class="fw-bold text-success" th:text="${#numbers.formatDecimal(profile.successRate ?: 100, 1, 1) + '%'}">100%</span>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         th:style="'width: ' + ${profile.successRate ?: 100} + '%'"
+                                         th:attr="aria-valuenow=${profile.successRate ?: 100}"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span>Đánh giá trung bình</span>
+                                    <span class="fw-bold">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <span th:text="${#numbers.formatDecimal(profile.rating ?: 5.0, 1, 1)}">5.0</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="col-lg-6">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Thao tác nhanh</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <a th:href="@{/shipper/attendance}" class="quick-action-btn">
+                                            <i class="bi bi-calendar-check"></i>
+                                            <span>Chấm công</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a th:href="@{/shipper/orders/available}" class="quick-action-btn">
+                                            <i class="bi bi-box-seam"></i>
+                                            <span>Nhận đơn mới</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a th:href="@{/shipper/orders}" class="quick-action-btn">
+                                            <i class="bi bi-truck"></i>
+                                            <span>Đơn đang giao</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a th:href="@{/shipper/income}" class="quick-action-btn">
+                                            <i class="bi bi-wallet2"></i>
+                                            <span>Xem thu nhập</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Delivery (if any) -->
+                <div class="row g-4" th:if="${currentDelivery != null}">
+                    <div class="col-12">
+                        <div class="shipper-card delivery-card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Đơn đang giao</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Mã đơn:</strong> <span th:text="${currentDelivery.orderCode}">ORD001</span></p>
+                                        <p><strong>Khách hàng:</strong> <span th:text="${currentDelivery.recipientName}">Nguyễn Văn A</span></p>
+                                        <p><strong>SĐT:</strong> <span th:text="${currentDelivery.phone}">0123456789</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Địa chỉ:</strong> <span th:text="${currentDelivery.address}">123 ABC</span></p>
+                                        <p><strong>Tổng tiền:</strong> <span th:text="${#numbers.formatDecimal(currentDelivery.totalAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <a th:href="@{/shipper/orders/{id}(id=${currentDelivery.id})}" class="btn btn-primary">
+                                        <i class="bi bi-eye me-2"></i>Xem chi tiết
+                                    </a>
+                                    <button class="btn btn-success ms-2" onclick="completeDelivery()">
+                                        <i class="bi bi-check2-circle me-2"></i>Hoàn thành giao hàng
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/shipper.js}"></script>
+</body>
+</html>

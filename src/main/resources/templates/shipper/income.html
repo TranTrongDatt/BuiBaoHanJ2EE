@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{shipper/layout :: head}"></th:block>
+</head>
+<body class="shipper-body">
+    <div class="shipper-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{shipper/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleShipperSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="shipper-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{shipper/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="shipper-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Thu nhập</h2>
+                        <p class="text-muted mb-0" th:text="'Tháng ' + ${monthName}">Tháng 01/2024</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/shipper/income/penalties}" class="btn btn-outline-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Xem khoản phạt
+                        </a>
+                        <a th:href="@{/shipper/income/stats}" class="btn btn-outline-primary">
+                            <i class="bi bi-graph-up me-2"></i>Thống kê năm
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Month Selector -->
+                <div class="shipper-card mb-4">
+                    <div class="card-body">
+                        <form th:action="@{/shipper/income}" method="get" class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">Tháng</label>
+                                <select name="month" class="form-select">
+                                    <option th:each="m : ${#numbers.sequence(1, 12)}" 
+                                            th:value="${m}" th:text="'Tháng ' + ${m}"
+                                            th:selected="${m == month}">Tháng 1</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Năm</label>
+                                <select name="year" class="form-select">
+                                    <option th:each="y : ${#numbers.sequence(2023, 2030)}" 
+                                            th:value="${y}" th:text="${y}"
+                                            th:selected="${y == year}">2024</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-2"></i>Xem
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${workDays}">0</div>
+                                <div class="stat-label">Ngày công</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon success">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">
+                                    <span th:text="${#numbers.formatDecimal(totalWorkHours, 1, 1)}">0</span>
+                                    <small>giờ</small>
+                                </div>
+                                <div class="stat-label">Tổng giờ làm</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon info">
+                                <i class="bi bi-hourglass"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">
+                                    <span th:text="${#numbers.formatDecimal(totalOvertime, 1, 1)}">0</span>
+                                    <small>giờ</small>
+                                </div>
+                                <div class="stat-label">Giờ tăng ca</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="shipper-stat-card">
+                            <div class="stat-icon danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" th:text="${#numbers.formatDecimal(totalPenalties, 0, 'COMMA', 0, 'POINT')}">0</div>
+                                <div class="stat-label">Tổng phạt (VNĐ)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Official Salary (if exists) -->
+                <div th:if="${currentSalary != null}" class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="shipper-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Bảng lương chính thức</h5>
+                                <span class="badge" 
+                                      th:classappend="${currentSalary.status.name() == 'PAID' ? 'bg-success' : 
+                                                       (currentSalary.status.name() == 'APPROVED' ? 'bg-primary' : 'bg-warning')}"
+                                      th:text="${currentSalary.status.displayName}">Chờ duyệt</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-3">Thu nhập</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td>Lương cơ bản</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(currentSalary.baseSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Lương tăng ca</td>
+                                                <td class="text-end text-success" th:text="${#numbers.formatDecimal(currentSalary.overtimeSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Phụ cấp tiền ăn</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(currentSalary.mealAllowance, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Phụ cấp xăng</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(currentSalary.gasAllowance, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr class="table-active">
+                                                <td><strong>Tổng thu nhập</strong></td>
+                                                <td class="text-end"><strong th:text="${#numbers.formatDecimal(currentSalary.grossSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-3">Khấu trừ</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td>BHXH (8%)</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(currentSalary.socialInsurance, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>BHYT (1.5%)</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(currentSalary.healthInsurance, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>BHTN (1%)</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(currentSalary.unemploymentInsurance, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Tổng phạt</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(currentSalary.totalPenalties, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr class="table-active">
+                                                <td><strong>Tổng khấu trừ</strong></td>
+                                                <td class="text-end"><strong class="text-danger" th:text="${'-' + #numbers.formatDecimal(currentSalary.totalDeductions, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0">Lương thực nhận</h4>
+                                    <h3 class="mb-0 text-primary" th:text="${#numbers.formatDecimal(currentSalary.netSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h3>
+                                </div>
+                                <div th:if="${currentSalary.paidAt != null}" class="mt-2 text-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Đã thanh toán ngày <span th:text="${#temporals.format(currentSalary.paidAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estimated Salary (if no official salary) -->
+                <div th:if="${currentSalary == null and estimatedBase != null}" class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="shipper-card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Lương tạm tính (chưa chính thức)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Đây là mức lương ước tính dựa trên công làm việc. Bảng lương chính thức sẽ được duyệt vào cuối tháng.
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td>Lương cơ bản</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(estimatedBase, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Lương tăng ca</td>
+                                                <td class="text-end text-success" th:text="${#numbers.formatDecimal(estimatedOvertime, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Phụ cấp tiền ăn</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(estimatedMeal, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Phụ cấp xăng</td>
+                                                <td class="text-end" th:text="${#numbers.formatDecimal(estimatedGas, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td>Tổng phạt</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(estimatedPenalty, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</td>
+                                            </tr>
+                                            <tr class="table-active">
+                                                <td><strong>Ước tính thực nhận</strong></td>
+                                                <td class="text-end"><strong class="text-primary" th:text="${#numbers.formatDecimal(estimatedTotal, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Penalties List -->
+                <div th:if="${penalties != null and !penalties.empty}" class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="shipper-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Các khoản phạt trong tháng</h5>
+                                <a th:href="@{/shipper/income/penalties}" class="btn btn-sm btn-outline-danger">Xem tất cả</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Ngày</th>
+                                                <th>Loại</th>
+                                                <th>Chi tiết</th>
+                                                <th class="text-end">Số tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="penalty : ${penalties}">
+                                                <td th:text="${#temporals.format(penalty.createdAt, 'dd/MM/yyyy')}">01/01/2024</td>
+                                                <td>
+                                                    <span class="badge bg-danger" th:text="${penalty.penaltyType.displayName}">Đi trễ</span>
+                                                </td>
+                                                <td th:text="${penalty.description}">Đi trễ 15 phút</td>
+                                                <td class="text-end text-danger" th:text="${'-' + #numbers.formatDecimal(penalty.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">-8,000 VNĐ</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary History -->
+                <div th:if="${salaryHistory != null and !salaryHistory.empty}" class="row g-4">
+                    <div class="col-12">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Lịch sử lương</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Tháng/Năm</th>
+                                                <th>Ngày công</th>
+                                                <th>Tổng giờ</th>
+                                                <th>Lương gross</th>
+                                                <th>Lương net</th>
+                                                <th>Trạng thái</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="salary : ${salaryHistory}">
+                                                <td th:text="${salary.month + '/' + salary.year}">01/2024</td>
+                                                <td th:text="${salary.workDays}">20</td>
+                                                <td th:text="${#numbers.formatDecimal(salary.totalHours, 1, 1)}">160.0</td>
+                                                <td th:text="${#numbers.formatDecimal(salary.grossSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">5,000,000 VNĐ</td>
+                                                <td class="fw-bold" th:text="${#numbers.formatDecimal(salary.netSalary, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">4,500,000 VNĐ</td>
+                                                <td>
+                                                    <span class="badge" 
+                                                          th:classappend="${salary.status.name() == 'PAID' ? 'bg-success' : 
+                                                                           (salary.status.name() == 'APPROVED' ? 'bg-primary' : 'bg-warning')}"
+                                                          th:text="${salary.status.displayName}">Đã thanh toán</span>
+                                                </td>
+                                                <td>
+                                                    <a th:href="@{/shipper/income/{id}(id=${salary.id})}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/shipper.js}"></script>
+</body>
+</html>

@@ -32,9 +32,19 @@ public class AppProperties {
     private String environment = "development";
     
     /**
-     * Base URL
+     * Base URL (alias: baseUrl)
+     */
+    private String url = "http://localhost:9090";
+    
+    /**
+     * Base URL (deprecated, use 'url' instead)
      */
     private String baseUrl = "http://localhost:9090";
+    
+    /**
+     * Initialize sample data on startup
+     */
+    private boolean initData = true;
     
     /**
      * Admin email

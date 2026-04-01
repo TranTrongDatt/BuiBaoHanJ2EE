@@ -67,6 +67,12 @@ public class Book {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "video_url", length = 500)
+    private String videoUrl;
+
+    @Column(name = "description_pdf_url", length = 500)
+    private String descriptionPdfUrl;
+
     @Column(name = "price", precision = 12, scale = 2)
     @Positive(message = "Price must be greater than 0")
     private BigDecimal price;

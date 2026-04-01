@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{shipper/layout :: head}"></th:block>
+</head>
+<body class="shipper-body">
+    <div class="shipper-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{shipper/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleShipperSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="shipper-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{shipper/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="shipper-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Tài khoản</h2>
+                        <p class="text-muted mb-0">Quản lý thông tin cá nhân</p>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span th:text="${success}">Thành công!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <span th:text="${error}">Có lỗi xảy ra!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Profile Summary Card -->
+                    <div class="col-lg-4">
+                        <div class="shipper-card text-center">
+                            <div class="card-body py-4">
+                                <div class="profile-avatar mb-3">
+                                    <img th:if="${profile.avatarUrl != null}" th:src="${profile.avatarUrl}" 
+                                         alt="Avatar" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                    <div th:unless="${profile.avatarUrl != null}" 
+                                         class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center"
+                                         style="width: 120px; height: 120px;">
+                                        <i class="bi bi-person-fill text-white" style="font-size: 4rem;"></i>
+                                    </div>
+                                </div>
+                                <h4 th:text="${profile.fullName}">Nguyễn Văn A</h4>
+                                <p class="text-muted mb-2">Nhân viên giao hàng</p>
+                                <span class="badge" 
+                                      th:classappend="${profile.status.name() == 'ONLINE' ? 'bg-success' : 'bg-secondary'}"
+                                      th:text="${profile.status.displayName}">Online</span>
+                                
+                                <hr>
+                                
+                                <div class="d-flex justify-content-around text-center">
+                                    <div>
+                                        <div class="fw-bold fs-4 text-primary" th:text="${profile.totalDeliveries}">0</div>
+                                        <small class="text-muted">Đơn giao</small>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold fs-4">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            <span th:text="${#numbers.formatDecimal(profile.rating ?: 5.0, 1, 1)}">5.0</span>
+                                        </div>
+                                        <small class="text-muted">Đánh giá</small>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold fs-4 text-success" th:text="${#numbers.formatDecimal(profile.successRate ?: 100, 0, 0) + '%'}">100%</div>
+                                        <small class="text-muted">Tỷ lệ thành công</small>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="text-start">
+                                    <p class="mb-2">
+                                        <i class="bi bi-calendar3 text-muted me-2"></i>
+                                        Ngày tham gia: <strong th:text="${#temporals.format(profile.joinDate, 'dd/MM/yyyy')}">01/01/2024</strong>
+                                    </p>
+                                    <p class="mb-2">
+                                        <i class="bi bi-briefcase text-muted me-2"></i>
+                                        Loại HĐ: <strong th:text="${profile.contractType.displayName}">Bán thời gian</strong>
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="bi bi-bicycle text-muted me-2"></i>
+                                        Phương tiện: <strong th:text="${profile.vehicleType.displayName + ' - ' + profile.licensePlate}">Xe máy - 59A1-12345</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Forms -->
+                    <div class="col-lg-8">
+                        <!-- Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="accountTabs">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#basicInfo">
+                                    <i class="bi bi-person me-2"></i>Thông tin cơ bản
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#vehicleInfo">
+                                    <i class="bi bi-bicycle me-2"></i>Phương tiện
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#bankInfo">
+                                    <i class="bi bi-bank me-2"></i>Ngân hàng
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#insuranceInfo">
+                                    <i class="bi bi-shield-check me-2"></i>Bảo hiểm
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content">
+                            <!-- Basic Info Tab -->
+                            <div class="tab-pane fade show active" id="basicInfo">
+                                <div class="shipper-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Thông tin cơ bản</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form th:action="@{/shipper/account/update-basic}" method="post" enctype="multipart/form-data">
+                                            <div class="row g-3">
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Họ và tên</label>
+                                                    <input type="text" class="form-control" name="fullName" 
+                                                           th:value="${profile.fullName}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Giới tính</label>
+                                                    <select class="form-select" name="gender" required>
+                                                        <option th:each="g : ${genders}" 
+                                                                th:value="${g.name()}" 
+                                                                th:text="${g.displayName}"
+                                                                th:selected="${profile.gender == g}">Nam</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số điện thoại</label>
+                                                    <input type="tel" class="form-control" name="phone" 
+                                                           th:value="${profile.phone}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Ngày sinh</label>
+                                                    <input type="date" class="form-control" name="dateOfBirth" 
+                                                           th:value="${profile.dateOfBirth}" required>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Địa chỉ</label>
+                                                    <textarea class="form-control" name="address" rows="2" required
+                                                              th:text="${profile.address}"></textarea>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Ảnh đại diện</label>
+                                                    <input type="file" class="form-control" name="avatar" accept="image/*">
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-check2 me-2"></i>Lưu thay đổi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Vehicle Info Tab -->
+                            <div class="tab-pane fade" id="vehicleInfo">
+                                <div class="shipper-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Thông tin phương tiện</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form th:action="@{/shipper/account/update-vehicle}" method="post">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Loại phương tiện</label>
+                                                    <select class="form-select" name="vehicleType" required>
+                                                        <option th:each="v : ${vehicleTypes}" 
+                                                                th:value="${v.name()}" 
+                                                                th:text="${v.displayName}"
+                                                                th:selected="${profile.vehicleType == v}">Xe máy</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Biển số xe</label>
+                                                    <input type="text" class="form-control" name="licensePlate" 
+                                                           th:value="${profile.licensePlate}" required>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-check2 me-2"></i>Lưu thay đổi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bank Info Tab -->
+                            <div class="tab-pane fade" id="bankInfo">
+                                <div class="shipper-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Thông tin ngân hàng</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form th:action="@{/shipper/account/update-bank}" method="post">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Tên ngân hàng</label>
+                                                    <input type="text" class="form-control" name="bankName" 
+                                                           th:value="${profile.bankName}" 
+                                                           placeholder="VD: Vietcombank">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số tài khoản</label>
+                                                    <input type="text" class="form-control" name="bankAccountNumber" 
+                                                           th:value="${profile.bankAccountNumber}"
+                                                           placeholder="VD: 0123456789">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Tên chủ tài khoản</label>
+                                                    <input type="text" class="form-control" name="bankAccountHolder" 
+                                                           th:value="${profile.bankAccountHolder}"
+                                                           placeholder="VD: NGUYEN VAN A">
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-check2 me-2"></i>Lưu thay đổi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Insurance Info Tab -->
+                            <div class="tab-pane fade" id="insuranceInfo">
+                                <div class="shipper-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Thông tin bảo hiểm & thuế</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form th:action="@{/shipper/account/update-insurance}" method="post">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số sổ BHXH</label>
+                                                    <input type="text" class="form-control" name="socialInsuranceNumber" 
+                                                           th:value="${profile.socialInsuranceNumber}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số thẻ BHYT</label>
+                                                    <input type="text" class="form-control" name="healthInsuranceNumber" 
+                                                           th:value="${profile.healthInsuranceNumber}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số sổ BHTN</label>
+                                                    <input type="text" class="form-control" name="unemploymentInsuranceNumber" 
+                                                           th:value="${profile.unemploymentInsuranceNumber}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Mã số thuế cá nhân</label>
+                                                    <input type="text" class="form-control" name="taxCode" 
+                                                           th:value="${profile.taxCode}">
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-check2 me-2"></i>Lưu thay đổi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quy định lương -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quy định lương hiện tại</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6 class="text-primary"><i class="bi bi-clock me-2"></i>Thời gian</h6>
+                                        <ul class="list-unstyled">
+                                            <li>Làm tối thiểu: <strong th:text="${config.minHoursPerDay}">6</strong> giờ/ngày</li>
+                                            <li>Làm tối đa: <strong th:text="${config.maxHoursPerDay}">12</strong> giờ/ngày</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-success"><i class="bi bi-cash me-2"></i>Lương & Phụ cấp</h6>
+                                        <ul class="list-unstyled">
+                                            <li>Lương giờ: <strong th:text="${#numbers.formatDecimal(config.hourlyRate, 0, 'COMMA', 0, 'POINT')}">30,000</strong> VNĐ</li>
+                                            <li>Tăng ca: <strong>x<span th:text="${config.overtimeMultiplier}">2</span></strong> lương giờ</li>
+                                            <li>Tiền ăn: <strong th:text="${#numbers.formatDecimal(config.mealAllowanceDaily, 0, 'COMMA', 0, 'POINT')}">100,000</strong> VNĐ/ngày</li>
+                                            <li>Tiền xăng: <strong th:text="${#numbers.formatDecimal(config.gasAllowanceMonthly, 0, 'COMMA', 0, 'POINT')}">500,000</strong> VNĐ/tháng</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Khấu trừ</h6>
+                                        <ul class="list-unstyled">
+                                            <li>BHXH: <strong>8%</strong></li>
+                                            <li>BHYT: <strong>1.5%</strong></li>
+                                            <li>BHTN: <strong>1%</strong></li>
+                                            <li>Phạt trễ: <strong th:text="${#numbers.formatDecimal(config.latePenaltyPerMinute, 0, 'COMMA', 0, 'POINT')}">8,000</strong> VNĐ/phút</li>
+                                            <li>Thiếu chấm công: <strong th:text="${#numbers.formatDecimal(config.missingPunchPenalty, 0, 'COMMA', 0, 'POINT')}">8,000</strong> VNĐ/lần</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/shipper.js}"></script>
+</body>
+</html>

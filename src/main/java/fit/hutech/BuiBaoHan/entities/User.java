@@ -184,8 +184,7 @@ public class User implements UserDetails {
     public boolean isAccountNonLocked() {
         // Tài khoản bị khóa hoặc bị cấm → không thể đăng nhập
         if (Boolean.TRUE.equals(isLocked)) return false;
-        if (status == UserStatus.LOCKED || status == UserStatus.BANNED) return false;
-        return true;
+        return status != UserStatus.LOCKED && status != UserStatus.BANNED;
     }
 
     @Override
@@ -197,8 +196,7 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         // Tài khoản inactive hoặc bị cấm → không thể đăng nhập
         if (Boolean.FALSE.equals(isActive)) return false;
-        if (status == UserStatus.BANNED) return false;
-        return true;
+        return status != UserStatus.BANNED;
     }
 
     /**

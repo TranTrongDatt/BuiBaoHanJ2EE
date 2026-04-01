@@ -9,6 +9,8 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>MiniVerse - Bookstore</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" th:href="@{/images/logo/logo.png}">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap CSS (CDN for latest) -->
@@ -37,7 +39,7 @@
         <link rel="stylesheet" th:href="@{/css/style.css}">
     </th:block>
 </head>
-<body class="d-flex flex-column min-vh-100" style="background: var(--background, #FDFDFD);">
+<body class="d-flex flex-column min-vh-100">
 
 <th:block th:fragment="header">
 <!-- SIDEBAR MENU - Pinterest Style -->
@@ -47,7 +49,7 @@
         <a href="/" class="sidebar-logo">
             <img th:src="@{/images/logo/logo.png}" alt="MiniVerse" height="40"/>
         </a>
-        <button class="sidebar-close" onclick="toggleSidebar()">
+        <button class="sidebar-close" onclick="toggleSidebar()" title="Đóng menu">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>
@@ -130,7 +132,7 @@
             <!-- 2. Search Box (Thanh tìm kiếm) -->
             <form class="header-search" th:action="@{/books}" method="get">
                 <input type="text" name="keyword" placeholder="Tìm kiếm sách..." />
-                <button type="submit"><i class="bi bi-search"></i></button>
+                <button type="submit" title="Tìm kiếm"><i class="bi bi-search"></i></button>
             </form>
             
             <!-- 3. Cart (Giỏ hàng) -->
@@ -152,6 +154,14 @@
                title="Trang quản trị">
                 <i class="bi bi-shield-lock"></i>
                 <span class="d-none d-lg-inline">Admin</span>
+            </a>
+            
+            <!-- 4.5 Shipper Button (chỉ hiển thị với ROLE_SHIPPER) -->
+            <a th:href="@{/shipper}" class="header-icon-btn shipper-header-btn" 
+               sec:authorize="hasAuthority('ROLE_SHIPPER') or hasAuthority('SHIPPER')" 
+               title="Trang shipper">
+                <i class="bi bi-truck"></i>
+                <span class="d-none d-lg-inline">Shipper</span>
             </a>
             
             <!-- Profile Dropdown (Authenticated) - Hover to show menu -->
@@ -234,13 +244,13 @@
                 <h4>About Us</h4>
                 <p>MiniVerse - Website cung cấp sản phẩm về sách tích hợp AI Chatbot. Đọc để chạm tới những vì sao.</p>
                 <div class="social-links">
-                    <a href="https://www.facebook.com/han.bao.835638/" target="_blank" class="facebook" title="Facebook">
+                    <a href="https://www.facebook.com/han.bao.835638/" target="_blank" rel="noopener noreferrer" class="facebook" title="Facebook">
                         <i class="bi bi-facebook"></i>
                     </a>
                     <a href="#" class="tiktok" title="TikTok">
                         <i class="bi bi-tiktok"></i>
                     </a>
-                    <a href="https://instagram.com/b._.baohan" target="_blank" class="instagram" title="Instagram">
+                    <a href="https://instagram.com/b._.baohan" target="_blank" rel="noopener noreferrer" class="instagram" title="Instagram">
                         <i class="bi bi-instagram"></i>
                     </a>
                 </div>

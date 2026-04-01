@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Alert Messages -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Quản lý Tác giả</h2>
+                        <p class="text-muted mb-0">Quản lý thông tin các tác giả trong hệ thống</p>
+                    </div>
+                    <a th:href="@{/admin/authors/add}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>Thêm tác giả
+                    </a>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form th:action="@{/admin/authors}" method="get" class="row g-3">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" name="search" class="form-control" 
+                                           placeholder="Tìm kiếm tác giả..." th:value="${search}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="nationality" class="form-select">
+                                    <option value="">-- Tất cả quốc tịch --</option>
+                                    <option th:each="nat : ${nationalities}" 
+                                            th:value="${nat}" 
+                                            th:text="${nat}"
+                                            th:selected="${nationality != null && nat == nationality}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-funnel me-2"></i>Lọc
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Authors Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover admin-datatable">
+                                <thead>
+                                    <tr>
+                                        <th width="60">ID</th>
+                                        <th width="80">Ảnh</th>
+                                        <th>Tên tác giả</th>
+                                        <th>Quốc tịch</th>
+                                        <th>Ngày sinh</th>
+                                        <th width="80">Số sách</th>
+                                        <th width="100">Trạng thái</th>
+                                        <th width="150">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="author : ${authors.content}">
+                                        <td th:text="${author.id}"></td>
+                                        <td>
+                                            <img th:if="${author.avatar != null && !author.avatar.isEmpty()}" 
+                                                 th:src="@{${author.avatar}}"
+                                                 alt="Avatar"
+                                                 class="rounded-circle"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                            <div th:unless="${author.avatar != null && !author.avatar.isEmpty()}" 
+                                                 class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="bi bi-person text-muted"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong th:text="${author.name}"></strong>
+                                            <div class="small text-muted" th:if="${author.website != null && !author.website.isEmpty()}">
+                                                <i class="bi bi-globe me-1"></i>
+                                                <a th:href="${author.website}" target="_blank" class="text-decoration-none">Website</a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span th:if="${author.nationality != null}" 
+                                                  class="badge bg-info"
+                                                  th:text="${author.nationality}"></span>
+                                            <span th:unless="${author.nationality != null}" 
+                                                  class="text-muted">--</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${author.birthDate != null}" 
+                                                  th:text="${#temporals.format(author.birthDate, 'dd/MM/yyyy')}"></span>
+                                            <span th:unless="${author.birthDate != null}" class="text-muted">--</span>
+                                            <span th:if="${author.deathDate != null}" class="text-danger small">
+                                                <br>† <span th:text="${#temporals.format(author.deathDate, 'dd/MM/yyyy')}"></span>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary" th:text="${author.bookCount}">0</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${author.isActive}" class="badge bg-success">Hoạt động</span>
+                                            <span th:unless="${author.isActive}" class="badge bg-secondary">Ẩn</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a th:href="@{/admin/authors/{id}(id=${author.id})}" 
+                                                   class="btn btn-outline-info" title="Xem">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a th:href="@{/admin/authors/edit/{id}(id=${author.id})}" 
+                                                   class="btn btn-outline-primary" title="Sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        title="Xóa"
+                                                        onclick="confirmDelete(this)"
+                                                        th:data-id="${author.id}"
+                                                        th:data-name="${author.name}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${authors.content.empty}">
+                                        <td colspan="8" class="text-center py-4">
+                                            <i class="bi bi-inbox display-4 text-muted"></i>
+                                            <p class="text-muted mt-2">Không có tác giả nào</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav th:if="${authors.totalPages > 1}" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item" th:classappend="${authors.first ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin/authors(page=${authors.number - 1}, search=${search}, nationality=${nationality})}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li th:each="i : ${#numbers.sequence(0, authors.totalPages - 1)}"
+                                    class="page-item" th:classappend="${i == authors.number ? 'active' : ''}">
+                                    <a class="page-link" th:href="@{/admin/authors(page=${i}, search=${search}, nationality=${nationality})}" th:text="${i + 1}"></a>
+                                </li>
+                                <li class="page-item" th:classappend="${authors.last ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin/authors(page=${authors.number + 1}, search=${search}, nationality=${nationality})}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa tác giả <strong id="deleteAuthorName"></strong>?</p>
+                    <p class="text-danger small">Hành động này không thể hoàn tác. Tác giả chỉ có thể xóa khi không còn sách nào được liên kết.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <form id="deleteForm" method="post" class="d-inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Xóa
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function confirmDelete(button) {
+            const id = button.dataset.id;
+            const name = button.dataset.name;
+            document.getElementById('deleteAuthorName').textContent = name;
+            document.getElementById('deleteForm').action = '/admin/authors/delete/' + id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+</body>
+</html>

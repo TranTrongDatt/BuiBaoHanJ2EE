@@ -37,7 +37,7 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
     @Value("${security.headers.hsts.max-age:31536000}")
     private long hstsMaxAge;
 
-    @Value("${security.headers.csp:default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net; style-src 'self' 'unsafe-inline'; style-src-elem 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdn.datatables.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; frame-src https://www.google.com;}")
+    @Value("${security.headers.csp:default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src-elem 'self' https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net; style-src 'self' 'unsafe-inline'; style-src-elem 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdn.datatables.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; media-src 'self' https://res.cloudinary.com; frame-src 'self' https://www.google.com https://res.cloudinary.com; object-src 'self' https://res.cloudinary.com;}")
     private String contentSecurityPolicy;
 
     @Override
@@ -48,8 +48,8 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         // Prevent MIME sniffing
         response.setHeader("X-Content-Type-Options", "nosniff");
         
-        // Prevent clickjacking
-        response.setHeader("X-Frame-Options", "DENY");
+        // Prevent clickjacking (SAMEORIGIN cho phép iframe cùng origin, vd: PDF viewer)
+        response.setHeader("X-Frame-Options", "SAMEORIGIN");
         
         // XSS Protection (legacy browsers)
         response.setHeader("X-XSS-Protection", "1; mode=block");

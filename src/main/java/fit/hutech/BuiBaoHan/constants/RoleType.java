@@ -12,7 +12,8 @@ public enum RoleType {
     
     ADMIN("ROLE_ADMIN", "Quản trị viên hệ thống"),
     STAFF("ROLE_STAFF", "Nhân viên"),
-    USER("ROLE_USER", "Người dùng thông thường");
+    USER("ROLE_USER", "Người dùng thông thường"),
+    SHIPPER("ROLE_SHIPPER", "Nhân viên giao hàng");
     
     private final String authority;
     private final String description;

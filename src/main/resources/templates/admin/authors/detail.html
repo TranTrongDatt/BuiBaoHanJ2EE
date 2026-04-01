@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Chi tiết Tác giả</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/authors}">Tác giả</a></li>
+                                <li class="breadcrumb-item active" th:text="${author.name}"></li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/authors/edit/{id}(id=${author.id})}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Chỉnh sửa
+                        </a>
+                        <a th:href="@{/admin/authors}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <!-- Author Avatar -->
+                        <div class="card mb-4">
+                            <div class="card-body text-center">
+                                <img th:if="${author.avatar != null && !author.avatar.isEmpty()}" 
+                                     th:src="@{${author.avatar}}"
+                                     alt="Avatar"
+                                     class="img-fluid rounded-circle mb-3"
+                                     style="width: 200px; height: 200px; object-fit: cover;">
+                                <div th:unless="${author.avatar != null && !author.avatar.isEmpty()}" 
+                                     class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                     style="width: 200px; height: 200px;">
+                                    <i class="bi bi-person display-1 text-muted"></i>
+                                </div>
+                                <h4 class="mb-1" th:text="${author.name}">Tên tác giả</h4>
+                                <p class="text-muted" th:if="${author.nationality != null}">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    <span th:text="${author.nationality}"></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Thống kê</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Số sách:</span>
+                                    <strong th:text="${bookCount}">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Trạng thái:</span>
+                                    <span th:if="${author.isActive}" class="badge bg-success">Hoạt động</span>
+                                    <span th:unless="${author.isActive}" class="badge bg-secondary">Ẩn</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Còn sống:</span>
+                                    <span th:if="${author.deathDate == null}" class="badge bg-success">Có</span>
+                                    <span th:unless="${author.deathDate == null}" class="badge bg-secondary">Không</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <!-- Author Info -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Thông tin tác giả</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 150px;">ID:</td>
+                                        <td><strong th:text="${author.id}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Tên đầy đủ:</td>
+                                        <td><strong th:text="${author.name}"></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Quốc tịch:</td>
+                                        <td>
+                                            <span th:if="${author.nationality != null}" 
+                                                  class="badge bg-info"
+                                                  th:text="${author.nationality}"></span>
+                                            <span th:unless="${author.nationality != null}" class="text-muted">Chưa cập nhật</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày sinh:</td>
+                                        <td>
+                                            <span th:if="${author.birthDate != null}" 
+                                                  th:text="${#temporals.format(author.birthDate, 'dd/MM/yyyy')}"></span>
+                                            <span th:unless="${author.birthDate != null}" class="text-muted">Chưa cập nhật</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày mất:</td>
+                                        <td>
+                                            <span th:if="${author.deathDate != null}" 
+                                                  class="text-danger"
+                                                  th:text="${#temporals.format(author.deathDate, 'dd/MM/yyyy')}"></span>
+                                            <span th:unless="${author.deathDate != null}" class="text-success">Còn sống</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Website:</td>
+                                        <td>
+                                            <a th:if="${author.website != null && !author.website.isEmpty()}" 
+                                               th:href="${author.website}"
+                                               target="_blank"
+                                               class="text-decoration-none">
+                                                <i class="bi bi-globe me-1"></i>
+                                                <span th:text="${author.website}"></span>
+                                            </a>
+                                            <span th:unless="${author.website != null && !author.website.isEmpty()}" class="text-muted">Chưa cập nhật</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Ngày tạo:</td>
+                                        <td th:if="${author.createdAt != null}" 
+                                            th:text="${#temporals.format(author.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                        <td th:unless="${author.createdAt != null}" class="text-muted">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Cập nhật:</td>
+                                        <td th:if="${author.updatedAt != null}"
+                                            th:text="${#temporals.format(author.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                        <td th:unless="${author.updatedAt != null}" class="text-muted">--</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Biography -->
+                        <div class="card mt-4" th:if="${author.biography != null && !author.biography.isEmpty()}">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-journal-text me-2"></i>Tiểu sử</h6>
+                            </div>
+                            <div class="card-body">
+                                <p th:text="${author.biography}" style="white-space: pre-wrap;"></p>
+                            </div>
+                        </div>
+
+                        <!-- Books by this author -->
+                        <div class="card mt-4" th:if="${author.books != null && !author.books.empty}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-book me-2"></i>Sách của tác giả</h6>
+                                <span class="badge bg-primary" th:text="${author.books.size()}"></span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th width="60">ID</th>
+                                                <th>Tên sách</th>
+                                                <th>Giá</th>
+                                                <th>Tồn kho</th>
+                                                <th width="80">Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="book : ${author.books}">
+                                                <td th:text="${book.id}"></td>
+                                                <td>
+                                                    <a th:href="@{/admin/books/{id}(id=${book.id})}" 
+                                                       class="text-decoration-none"
+                                                       th:text="${book.title}"></a>
+                                                </td>
+                                                <td th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>
+                                                <td>
+                                                    <span th:class="${book.stockQuantity > 0 ? 'text-success' : 'text-danger'}"
+                                                          th:text="${book.stockQuantity}"></span>
+                                                </td>
+                                                <td>
+                                                    <a th:href="@{/admin/books/edit/{id}(id=${book.id})}" 
+                                                       class="btn btn-sm btn-outline-primary" title="Sửa">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No books message -->
+                        <div class="card mt-4" th:if="${author.books == null || author.books.empty}">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-book display-4 text-muted"></i>
+                                <p class="text-muted mt-2 mb-0">Tác giả chưa có sách nào trong hệ thống</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

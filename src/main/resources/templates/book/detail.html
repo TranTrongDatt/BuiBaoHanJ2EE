@@ -220,8 +220,8 @@
             text-align: center;
             font-size: 1.1rem;
             font-weight: 600;
-            appearance: textfield;
             -moz-appearance: textfield;
+            appearance: textfield;
         }
         
         .qty-input::-webkit-outer-spin-button,
@@ -576,6 +576,8 @@
                 height: 48px;
             }
         }
+        .buy-now-form { flex: 1; display: flex; }
+        .btn-buy-now.full-width { width: 100%; }
     </style>
 </head>
 <body>
@@ -601,7 +603,8 @@
                 <div class="product-gallery">
                     <div class="main-image">
                         <img th:src="@{${book.coverImage != null ? book.coverImage : '/images/banner/hero-books.png'}}" 
-                             th:alt="${book.title}" 
+                             th:alt="${book.title}" alt="Book cover"
+                             th:title="${book.title}" title="Book cover"
                              onerror="this.onerror=null; this.src='/images/banner/hero-books.png';"
                              id="mainProductImage">
                     </div>
@@ -688,12 +691,12 @@
                             <label class="quantity-label">Số lượng</label>
                             <div class="quantity-selector">
                                 <div class="qty-control">
-                                    <button type="button" class="qty-btn" id="decreaseQty">
+                                    <button type="button" class="qty-btn" id="decreaseQty" title="Giảm số lượng" aria-label="Giảm số lượng">
                                         <i class="bi bi-dash"></i>
                                     </button>
                                     <input type="number" class="qty-input" id="productQty" value="1" min="1" 
-                                           th:max="${book.stockQuantity}">
-                                    <button type="button" class="qty-btn" id="increaseQty">
+                                           th:max="${book.stockQuantity}" title="Số lượng sản phẩm" aria-label="Số lượng sản phẩm">
+                                    <button type="button" class="qty-btn" id="increaseQty" title="Tăng số lượng" aria-label="Tăng số lượng">
                                         <i class="bi bi-plus"></i>
                                     </button>
                                 </div>
@@ -710,11 +713,11 @@
                                 <span>Thêm vào giỏ hàng</span>
                             </button>
                             
-                            <form th:action="@{/cart/buy-now}" method="post" style="flex:1; display:flex;" id="buyNowForm">
+                            <form th:action="@{/cart/buy-now}" method="post" class="buy-now-form" id="buyNowForm">
                                 <input type="hidden" name="bookId" th:value="${book.id}">
                                 <input type="hidden" name="quantity" id="buyNowQuantity" value="1">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                <button type="submit" class="btn-buy-now" style="width:100%;" 
+                                <button type="submit" class="btn-buy-now full-width" 
                                         th:disabled="${book.stockQuantity == null or book.stockQuantity <= 0}">
                                     <i class="bi bi-bag-check"></i>
                                     <span>Mua ngay</span>
@@ -773,6 +776,18 @@
                     <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" 
                             data-bs-target="#reviews" type="button" role="tab">
                         <i class="bi bi-star me-1"></i> Đánh giá
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation" th:if="${book.videoUrl != null}">
+                    <button class="nav-link" id="video-tab" data-bs-toggle="tab"
+                            data-bs-target="#video" type="button" role="tab">
+                        <i class="bi bi-play-circle me-1"></i> Video giới thiệu
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation" th:if="${book.descriptionPdfUrl != null}">
+                    <button class="nav-link" id="pdf-tab" data-bs-toggle="tab"
+                            data-bs-target="#pdf" type="button" role="tab">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Tài liệu PDF
                     </button>
                 </li>
             </ul>
@@ -842,6 +857,39 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Video Tab -->
+                <div class="tab-pane fade" id="video" role="tabpanel" th:if="${book.videoUrl != null}">
+                    <div class="text-center py-4">
+                        <h5 class="mb-3"><i class="bi bi-play-circle me-2"></i>Video giới thiệu sách</h5>
+                        <video controls preload="metadata"
+                               th:src="${book.videoUrl}"
+                               class="book-video-player">
+                            Trình duyệt của bạn không hỗ trợ phát video.
+                        </video>
+                    </div>
+                </div>
+
+                <!-- PDF Tab -->
+                <div class="tab-pane fade" id="pdf" role="tabpanel" th:if="${book.descriptionPdfUrl != null}">
+                    <div class="py-4">
+                        <h5 class="mb-3"><i class="bi bi-file-earmark-pdf me-2"></i>Tài liệu mô tả sách</h5>
+                        <p class="text-muted mb-3">Bạn có thể tải xuống hoặc xem trực tuyến file PDF mô tả chi tiết về cuốn sách này.</p>
+                        <div class="mb-3">
+                            <a th:href="@{/books/{id}/download-pdf(id=${book.id})}" class="btn btn-danger me-2">
+                                <i class="bi bi-download me-1"></i> Tải PDF về máy
+                            </a>
+                            <a th:href="@{/books/{id}/view-pdf(id=${book.id})}" target="_blank" class="btn btn-outline-secondary">
+                                <i class="bi bi-eye me-1"></i> Xem trực tuyến
+                            </a>
+                        </div>
+                        <div class="ratio ratio-16x9 mt-3">
+                            <iframe th:src="@{/books/{id}/view-pdf(id=${book.id})}" 
+                                    title="PDF mô tả sách" 
+                                    allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -854,7 +902,8 @@
                 <div class="col-6 col-md-3 mb-4" th:each="related : ${relatedBooks}">
                     <a th:href="@{/books/{slug}(slug=${related.slug})}" class="related-book-card">
                         <img th:src="@{${related.coverImage != null ? related.coverImage : '/images/banner/hero-books.png'}}" 
-                             th:alt="${related.title}"
+                             th:alt="${related.title}" alt="Related book cover"
+                             th:title="${related.title}" title="Related book"
                              onerror="this.onerror=null; this.src='/images/banner/hero-books.png';">
                         <div class="related-book-info">
                             <h6 th:text="${related.title}">Tên sách</h6>
@@ -1098,7 +1147,8 @@
                 });
             }
 
-            function closeWishlistPanel() {
+            // Must be global - used in onclick handlers
+            window.closeWishlistPanel = function() {
                 const panel = document.getElementById('wishlistPanel');
                 const overlay = document.getElementById('wishlistOverlay');
                 if (panel) panel.classList.remove('open');
@@ -1153,16 +1203,16 @@
                     let html = '';
                     items.forEach(item => {
                         // Handle coverImage - check if already has path prefix or just filename
-                        let img = '/images/no-cover.png';
+                        let img = '/images/banner/hero-books.png';
                         if (item.bookCoverImage) {
-                            img = item.bookCoverImage.startsWith('/') ? item.bookCoverImage : ('/uploads/books/' + item.bookCoverImage);
+                            img = (item.bookCoverImage.startsWith('/') || item.bookCoverImage.startsWith('http')) ? item.bookCoverImage : ('/uploads/books/' + item.bookCoverImage);
                         }
                         const price = item.price ? new Intl.NumberFormat('vi-VN').format(item.price) + 'đ' : '';
                         const bookUrl = item.bookSlug ? '/books/' + item.bookSlug : '/books';
                         html += `
                             <div class="wl-item">
                                 <a href="${bookUrl}" class="wl-item-img">
-                                    <img src="${img}" alt="${item.bookTitle}" onerror="this.src='/images/no-cover.png'">
+                                    <img src="${img}" alt="${item.bookTitle}" onerror="this.src='/images/banner/hero-books.png'">
                                 </a>
                                 <div class="wl-item-info">
                                     <a href="${bookUrl}" class="wl-item-title">${item.bookTitle}</a>
@@ -1182,7 +1232,8 @@
                 });
             }
 
-            function removeFromPanel(bookId, btn) {
+            // Must be global - used in onclick handlers
+            window.removeFromPanel = function(bookId, btn) {
                 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
                 

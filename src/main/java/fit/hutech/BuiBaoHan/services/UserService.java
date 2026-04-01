@@ -16,9 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import fit.hutech.BuiBaoHan.constants.Provider;
-import fit.hutech.BuiBaoHan.constants.Role;
 import fit.hutech.BuiBaoHan.constants.UserStatus;
 import fit.hutech.BuiBaoHan.dto.RegisterRequest;
 import fit.hutech.BuiBaoHan.entities.User;
@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class UserService implements UserDetailsService {
 
     private final IUserRepository userRepository;
@@ -50,12 +51,11 @@ public class UserService implements UserDetailsService {
             rollbackFor = {Exception.class, Throwable.class})
     public void setDefaultRole(String username) {
         userRepository.findByUsername(username).ifPresent(user -> {
-            var role = roleRepository.findRoleById(Role.USER.value);
-            if (role != null) {
+            roleRepository.findByName("ROLE_USER").ifPresent(role -> {
                 user.getRoles().add(role);
                 userRepository.save(user);
                 log.info("Default role USER assigned to: {}", username);
-            }
+            });
         });
     }
 

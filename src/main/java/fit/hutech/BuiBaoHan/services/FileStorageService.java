@@ -52,6 +52,10 @@ public class FileStorageService {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
 
+    private static final List<String> ALLOWED_VIDEO_TYPES = Arrays.asList(
+            "video/mp4", "video/webm"
+    );
+
     private Path rootLocation;
 
     @PostConstruct
@@ -72,6 +76,7 @@ public class FileStorageService {
             Files.createDirectories(rootLocation.resolve("categories"));
             Files.createDirectories(rootLocation.resolve("fields"));
             Files.createDirectories(rootLocation.resolve("blog"));
+            Files.createDirectories(rootLocation.resolve("videos"));
             
             log.info("Upload directories initialized at: {}", rootLocation.toAbsolutePath());
         } catch (IOException e) {
@@ -172,6 +177,33 @@ public class FileStorageService {
      */
     public String storeDocument(MultipartFile file) throws IOException {
         validateFile(file, ALLOWED_DOCUMENT_TYPES);
+        return store(file, "documents");
+    }
+
+    /**
+     * Upload video - tự động chọn Local hoặc Cloudinary
+     * @param file File video (MP4, WebM)
+     * @return URL video đã lưu
+     */
+    public String storeVideo(MultipartFile file) throws IOException {
+        validateFile(file, ALLOWED_VIDEO_TYPES);
+        
+        if (isCloudinaryAvailable()) {
+            log.debug("Uploading video to Cloudinary: {}", file.getOriginalFilename());
+            return cloudinaryService.uploadVideo(file);
+        }
+        
+        return store(file, "videos");
+    }
+
+    /**
+     * Upload PDF mô tả sách - luôn lưu local
+     * (Cloudinary chặn raw file với tài khoản untrusted, nên PDF luôn lưu local để serve trực tiếp)
+     * @param file File PDF
+     * @return Đường dẫn file PDF đã lưu
+     */
+    public String storeDescriptionPdf(MultipartFile file) throws IOException {
+        validateFile(file, List.of("application/pdf"));
         return store(file, "documents");
     }
 

@@ -144,6 +144,72 @@ public class CloudinaryService {
     }
     
     /**
+     * Upload video lên Cloudinary (MP4, WebM)
+     * 
+     * @param file MultipartFile video cần upload
+     * @return URL video đã upload (HTTPS)
+     */
+    @SuppressWarnings("unchecked")
+    public String uploadVideo(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+        
+        String publicId = generatePublicId(file.getOriginalFilename());
+        
+        Map<String, Object> options = ObjectUtils.asMap(
+            "public_id", publicId,
+            "folder", buildFolderPath("videos"),
+            "resource_type", "video",
+            "overwrite", true
+        );
+        
+        try {
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), options);
+            String secureUrl = (String) result.get("secure_url");
+            log.info("Uploaded video to Cloudinary: {} -> {}", file.getOriginalFilename(), secureUrl);
+            return secureUrl;
+        } catch (IOException e) {
+            log.error("Failed to upload video to Cloudinary: {}", file.getOriginalFilename(), e);
+            throw new IOException("Upload video to Cloudinary failed: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Upload raw file lên Cloudinary (PDF, DOCX, CSV, TXT...)
+     * 
+     * @param file MultipartFile cần upload
+     * @param folder Thư mục con (documents, ebooks)
+     * @return URL file đã upload (HTTPS)
+     */
+    @SuppressWarnings("unchecked")
+    public String uploadRawFile(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+        
+        // Giữ extension cho raw file để URL download có đuôi đúng (.pdf, .docx...)
+        String publicId = generatePublicIdWithExtension(file.getOriginalFilename());
+        
+        Map<String, Object> options = ObjectUtils.asMap(
+            "public_id", publicId,
+            "folder", buildFolderPath(folder),
+            "resource_type", "raw",
+            "overwrite", true
+        );
+        
+        try {
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), options);
+            String secureUrl = (String) result.get("secure_url");
+            log.info("Uploaded raw file to Cloudinary: {} -> {}", file.getOriginalFilename(), secureUrl);
+            return secureUrl;
+        } catch (IOException e) {
+            log.error("Failed to upload raw file to Cloudinary: {}", file.getOriginalFilename(), e);
+            throw new IOException("Upload raw file to Cloudinary failed: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
      * Xóa ảnh khỏi Cloudinary
      * 
      * @param publicId Public ID của ảnh (hoặc URL)
@@ -259,6 +325,56 @@ public class CloudinaryService {
         return url != null && url.contains("res.cloudinary.com");
     }
     
+    /**
+     * Tạo signed URL từ URL gốc.
+     * Signed URL chứa chữ ký xác thực, bypass hạn chế "untrusted customer".
+     *
+     * @param originalUrl URL gốc từ Cloudinary
+     * @return Signed URL hoặc URL gốc nếu không parse được
+     */
+    public String generateSignedUrl(String originalUrl) {
+        if (originalUrl == null || !isCloudinaryUrl(originalUrl)) {
+            return originalUrl;
+        }
+
+        try {
+            String[] parts = originalUrl.split("/upload/");
+            if (parts.length < 2) return originalUrl;
+
+            // Xác định resource_type từ URL
+            String resourceType = "image";
+            if (originalUrl.contains("/raw/")) resourceType = "raw";
+            else if (originalUrl.contains("/video/")) resourceType = "video";
+
+            // Lấy path sau /upload/ và bỏ version (v123456789/)
+            String path = parts[1];
+            if (path.matches("^v\\d+/.*")) {
+                path = path.substring(path.indexOf('/') + 1);
+            }
+
+            // Raw file giữ extension trong public_id, image/video thì bỏ
+            String publicId;
+            if ("raw".equals(resourceType)) {
+                publicId = path;
+            } else {
+                int lastDot = path.lastIndexOf('.');
+                publicId = lastDot > 0 ? path.substring(0, lastDot) : path;
+            }
+
+            String signedUrl = cloudinary.url()
+                    .resourceType(resourceType)
+                    .secure(true)
+                    .signed(true)
+                    .generate(publicId);
+
+            log.debug("Generated signed URL: {} -> {}", originalUrl, signedUrl);
+            return signedUrl;
+        } catch (Exception e) {
+            log.warn("Failed to generate signed URL for: {}", originalUrl, e);
+            return originalUrl;
+        }
+    }
+
     // ==================== Private Helper Methods ====================
     
     /**
@@ -289,5 +405,25 @@ public class CloudinaryService {
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
         
         return sanitized + "_" + uniqueId;
+    }
+
+    /**
+     * Tạo public_id giữ nguyên extension (dùng cho raw file: PDF, DOCX...)
+     * Cloudinary raw resource cần extension trong public_id để URL có đuôi đúng
+     */
+    private String generatePublicIdWithExtension(String originalFilename) {
+        String extension = "";
+        String baseName = originalFilename;
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+            baseName = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
+        }
+        
+        String sanitized = baseName != null ?
+            baseName.replaceAll("[^a-zA-Z0-9-_]", "_").toLowerCase() : "file";
+        
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        
+        return sanitized + "_" + uniqueId + extension;
     }
 }

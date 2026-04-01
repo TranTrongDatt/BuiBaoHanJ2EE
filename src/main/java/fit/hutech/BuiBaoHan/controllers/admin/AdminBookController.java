@@ -162,6 +162,8 @@ public class AdminBookController {
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) MultipartFile coverImageFile,
             @RequestParam(required = false) List<MultipartFile> additionalImages,
+            @RequestParam(required = false) MultipartFile videoFile,
+            @RequestParam(required = false) MultipartFile descriptionPdfFile,
             Model model,
             RedirectAttributes redirectAttributes) {
         
@@ -275,6 +277,24 @@ public class AdminBookController {
                     }
                 }
                 book.setImages(imagePaths);
+            }
+            
+            // Handle video upload
+            if (videoFile != null && !videoFile.isEmpty()) {
+                String oldVideoUrl = book.getVideoUrl();
+                String videoUrl = fileStorageService.storeVideo(videoFile);
+                book.setVideoUrl(videoUrl);
+                fileStorageService.deleteOldFileIfNeeded(oldVideoUrl, videoUrl);
+                log.info("Uploaded video for book: {}", videoUrl);
+            }
+            
+            // Handle description PDF upload
+            if (descriptionPdfFile != null && !descriptionPdfFile.isEmpty()) {
+                String oldPdfUrl = book.getDescriptionPdfUrl();
+                String pdfUrl = fileStorageService.storeDescriptionPdf(descriptionPdfFile);
+                book.setDescriptionPdfUrl(pdfUrl);
+                fileStorageService.deleteOldFileIfNeeded(oldPdfUrl, pdfUrl);
+                log.info("Uploaded description PDF for book: {}", pdfUrl);
             }
             
             if (book.getId() == null) {

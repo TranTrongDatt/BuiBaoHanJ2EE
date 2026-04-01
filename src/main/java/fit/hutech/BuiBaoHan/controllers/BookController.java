@@ -1,7 +1,16 @@
 package fit.hutech.BuiBaoHan.controllers;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,10 +32,12 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/books")
 @RequiredArgsConstructor
+@Slf4j
 public class BookController {
 
     private final BookService bookService;
@@ -34,6 +45,9 @@ public class BookController {
     private final CartService cartService;
     private final AuthorService authorService;
     private final PublisherService publisherService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.upload.dir:uploads}")
+    private String uploadDir;
 
     @GetMapping
     public String showAllBooks(@NotNull Model model,
@@ -91,7 +105,7 @@ public class BookController {
         
         // Check if parameter is numeric (ID) or string (slug)
         if (slugOrId.matches("\\d+")) {
-            bookOpt = bookService.getBookById(Long.parseLong(slugOrId));
+            bookOpt = bookService.getBookById(Long.valueOf(slugOrId));
         } else {
             bookOpt = bookService.getBookBySlug(slugOrId);
         }
@@ -105,6 +119,69 @@ public class BookController {
                     return "book/detail";
                 })
                 .orElse("redirect:/books");
+    }
+
+    /**
+     * Proxy PDF từ Cloudinary - dùng chung cho cả download và view inline.
+     * disposition = "attachment" → tải về, "inline" → xem trong trình duyệt/iframe.
+     */
+    private ResponseEntity<byte[]> proxyPdf(Book book, String disposition) {
+        String pdfUrl = book.getDescriptionPdfUrl();
+        if (pdfUrl == null || pdfUrl.isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String filename = book.getTitle() != null
+                ? book.getTitle().replaceAll("[^a-zA-Z0-9\\p{L} _-]", "")
+                        .replaceAll("\\s+", "_") + ".pdf"
+                : "book-description.pdf";
+
+        try {
+            byte[] pdfBytes;
+
+            if (pdfUrl.startsWith("/uploads/")) {
+                // File lưu local: đọc trực tiếp từ disk
+                Path filePath = Paths.get(uploadDir).resolve(pdfUrl.substring("/uploads/".length()));
+                if (!Files.exists(filePath)) {
+                    log.warn("PDF file not found on disk: {}", filePath);
+                    return ResponseEntity.notFound().build();
+                }
+                pdfBytes = Files.readAllBytes(filePath);
+            } else {
+                // File trên Cloudinary hoặc URL bên ngoài
+                try (InputStream in = URI.create(pdfUrl).toURL().openStream()) {
+                    pdfBytes = in.readAllBytes();
+                }
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + filename + "\"")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            log.error("Failed to serve PDF for book [{}]: {} - URL: {}", book.getId(), e.getMessage(), pdfUrl);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Download PDF mô tả sách (Content-Disposition: attachment)
+     */
+    @GetMapping("/{id}/download-pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> proxyPdf(book, "attachment"))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Xem PDF inline trong iframe/trình duyệt (Content-Disposition: inline)
+     */
+    @GetMapping("/{id}/view-pdf")
+    public ResponseEntity<byte[]> viewPdf(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> proxyPdf(book, "inline"))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/add")

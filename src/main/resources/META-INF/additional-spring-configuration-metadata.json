@@ -1,0 +1,379 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Secret key for signing JWT tokens (Base64 encoded, minimum 256 bits for HS256)"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "Access token expiration time in milliseconds (default: 15 minutes)"
+    },
+    {
+      "name": "jwt.refresh-expiration",
+      "type": "java.lang.Long",
+      "description": "Refresh token expiration time in milliseconds (default: 7 days)"
+    },
+    {
+      "name": "jwt.cookie.name",
+      "type": "java.lang.String",
+      "description": "Access token cookie name"
+    },
+    {
+      "name": "jwt.cookie.refresh-name",
+      "type": "java.lang.String",
+      "description": "Refresh token cookie name"
+    },
+    {
+      "name": "jwt.cookie.secure",
+      "type": "java.lang.Boolean",
+      "description": "Whether cookie should be secure (HTTPS only)"
+    },
+    {
+      "name": "jwt.cookie.same-site",
+      "type": "java.lang.String",
+      "description": "SameSite cookie attribute (Strict, Lax, None)"
+    },
+    {
+      "name": "jwt.cookie.domain",
+      "type": "java.lang.String",
+      "description": "Cookie domain"
+    },
+    {
+      "name": "google.recaptcha.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether reCAPTCHA is enabled"
+    },
+    {
+      "name": "google.recaptcha.site-key",
+      "type": "java.lang.String",
+      "description": "reCAPTCHA site key (public key)"
+    },
+    {
+      "name": "google.recaptcha.secret",
+      "type": "java.lang.String",
+      "description": "reCAPTCHA secret key (private key)"
+    },
+    {
+      "name": "rabbitmq.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether RabbitMQ is enabled"
+    },
+    {
+      "name": "password-reset.token.expiry-minutes",
+      "type": "java.lang.Integer",
+      "description": "Password reset token expiry time in minutes"
+    },
+    {
+      "name": "password-reset.rate-limit.max-requests",
+      "type": "java.lang.Integer",
+      "description": "Maximum password reset requests per time window"
+    },
+    {
+      "name": "security.headers.hsts.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether HSTS is enabled"
+    },
+    {
+      "name": "security.headers.hsts.max-age",
+      "type": "java.lang.Long",
+      "description": "HSTS max-age in seconds"
+    },
+    {
+      "name": "security.headers.csp",
+      "type": "java.lang.String",
+      "description": "Content Security Policy header value"
+    },
+    {
+      "name": "app.name",
+      "type": "java.lang.String",
+      "description": "Application name"
+    },
+    {
+      "name": "app.version",
+      "type": "java.lang.String",
+      "description": "Application version"
+    },
+    {
+      "name": "app.environment",
+      "type": "java.lang.String",
+      "description": "Application environment (development, production)"
+    },
+    {
+      "name": "app.url",
+      "type": "java.lang.String",
+      "description": "Application base URL"
+    },
+    {
+      "name": "app.admin-email",
+      "type": "java.lang.String",
+      "description": "Admin email address"
+    },
+    {
+      "name": "app.support-email",
+      "type": "java.lang.String",
+      "description": "Support email address"
+    },
+    {
+      "name": "app.timezone",
+      "type": "java.lang.String",
+      "description": "Application timezone"
+    },
+    {
+      "name": "app.locale",
+      "type": "java.lang.String",
+      "description": "Application locale"
+    },
+    {
+      "name": "app.init-data",
+      "type": "java.lang.Boolean",
+      "description": "Whether to initialize sample data"
+    },
+    {
+      "name": "app.pagination.default-size",
+      "type": "java.lang.Integer",
+      "description": "Default pagination page size"
+    },
+    {
+      "name": "app.pagination.max-size",
+      "type": "java.lang.Integer",
+      "description": "Maximum pagination page size"
+    },
+    {
+      "name": "gemini.api-key",
+      "type": "java.lang.String",
+      "description": "Google Gemini API key"
+    },
+    {
+      "name": "gemini.model",
+      "type": "java.lang.String",
+      "description": "Gemini model name (e.g., gemini-1.5-flash)"
+    },
+    {
+      "name": "gemini.base-url",
+      "type": "java.lang.String",
+      "description": "Gemini API base URL"
+    },
+    {
+      "name": "gemini.max-output-tokens",
+      "type": "java.lang.Integer",
+      "description": "Maximum output tokens for Gemini response"
+    },
+    {
+      "name": "gemini.temperature",
+      "type": "java.lang.Double",
+      "description": "Gemini temperature parameter (0.0-1.0)"
+    },
+    {
+      "name": "gemini.top-p",
+      "type": "java.lang.Double",
+      "description": "Gemini top-p parameter"
+    },
+    {
+      "name": "gemini.top-k",
+      "type": "java.lang.Integer",
+      "description": "Gemini top-k parameter"
+    },
+    {
+      "name": "gemini.timeout",
+      "type": "java.lang.Integer",
+      "description": "Gemini API timeout in seconds"
+    },
+    {
+      "name": "gemini.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether Gemini AI is enabled"
+    },
+    {
+      "name": "file.storage.upload-dir",
+      "type": "java.lang.String",
+      "description": "Base upload directory"
+    },
+    {
+      "name": "file.storage.book-cover-dir",
+      "type": "java.lang.String",
+      "description": "Book cover images directory"
+    },
+    {
+      "name": "file.storage.avatar-dir",
+      "type": "java.lang.String",
+      "description": "User avatars directory"
+    },
+    {
+      "name": "file.storage.blog-dir",
+      "type": "java.lang.String",
+      "description": "Blog images directory"
+    },
+    {
+      "name": "file.storage.max-file-size",
+      "type": "java.lang.Long",
+      "description": "Maximum file size in bytes"
+    },
+    {
+      "name": "file.storage.image-quality",
+      "type": "java.lang.Double",
+      "description": "Image compression quality (0.0-1.0)"
+    },
+    {
+      "name": "file.storage.use-cloud-storage",
+      "type": "java.lang.Boolean",
+      "description": "Whether to use cloud storage (Cloudinary)"
+    },
+    {
+      "name": "cloudinary.cloud-name",
+      "type": "java.lang.String",
+      "description": "Cloudinary cloud name"
+    },
+    {
+      "name": "cloudinary.api-key",
+      "type": "java.lang.String",
+      "description": "Cloudinary API key"
+    },
+    {
+      "name": "cloudinary.api-secret",
+      "type": "java.lang.String",
+      "description": "Cloudinary API secret"
+    },
+    {
+      "name": "cloudinary.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether Cloudinary is enabled"
+    },
+    {
+      "name": "cloudinary.folder",
+      "type": "java.lang.String",
+      "description": "Cloudinary base folder"
+    },
+    {
+      "name": "cloudinary.quality",
+      "type": "java.lang.String",
+      "description": "Cloudinary image quality"
+    },
+    {
+      "name": "library.max-borrow-limit",
+      "type": "java.lang.Integer",
+      "description": "Maximum books a user can borrow"
+    },
+    {
+      "name": "library.borrow-duration-days",
+      "type": "java.lang.Integer",
+      "description": "Default borrow duration in days"
+    },
+    {
+      "name": "library.max-renewals",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of renewals allowed"
+    },
+    {
+      "name": "library.renewal-days",
+      "type": "java.lang.Integer",
+      "description": "Number of days per renewal"
+    },
+    {
+      "name": "library.reminder-days-before-due",
+      "type": "java.lang.Integer",
+      "description": "Days before due date to send reminder"
+    },
+    {
+      "name": "library.late-fee-per-day",
+      "type": "java.lang.Integer",
+      "description": "Late fee per day in VND"
+    },
+    {
+      "name": "library.max-late-fee",
+      "type": "java.lang.Integer",
+      "description": "Maximum late fee in VND"
+    },
+    {
+      "name": "library.days-until-lost",
+      "type": "java.lang.Integer",
+      "description": "Days until a book is considered lost"
+    },
+    {
+      "name": "library.card.validity-years",
+      "type": "java.lang.Integer",
+      "description": "Library card validity in years"
+    },
+    {
+      "name": "library.card.issuance-fee",
+      "type": "java.lang.Integer",
+      "description": "Fee for issuing new library card in VND"
+    },
+    {
+      "name": "library.card.renewal-fee",
+      "type": "java.lang.Integer",
+      "description": "Fee for renewing library card in VND"
+    },
+    {
+      "name": "library.card.replacement-fee",
+      "type": "java.lang.Integer",
+      "description": "Fee for replacing lost library card in VND"
+    },
+    {
+      "name": "payment.currency",
+      "type": "java.lang.String",
+      "description": "Payment currency code"
+    },
+    {
+      "name": "payment.order-expiration-minutes",
+      "type": "java.lang.Integer",
+      "description": "Order expiration time in minutes"
+    },
+    {
+      "name": "payment.cod.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether COD payment is enabled"
+    },
+    {
+      "name": "payment.cod.max-amount",
+      "type": "java.lang.Long",
+      "description": "Maximum COD order amount in VND"
+    },
+    {
+      "name": "payment.vietqr.bank-id",
+      "type": "java.lang.String",
+      "description": "VietQR bank ID"
+    },
+    {
+      "name": "payment.vietqr.account-no",
+      "type": "java.lang.String",
+      "description": "VietQR bank account number"
+    },
+    {
+      "name": "payment.vietqr.account-name",
+      "type": "java.lang.String",
+      "description": "VietQR account holder name"
+    },
+    {
+      "name": "payment.vietqr.template",
+      "type": "java.lang.String",
+      "description": "VietQR QR code template"
+    },
+    {
+      "name": "payment.vnpay.tmn-code",
+      "type": "java.lang.String",
+      "description": "VNPay terminal code (TMN Code)"
+    },
+    {
+      "name": "payment.vnpay.hash-secret",
+      "type": "java.lang.String",
+      "description": "VNPay hash secret key"
+    },
+    {
+      "name": "payment.momo.partner-code",
+      "type": "java.lang.String",
+      "description": "MoMo partner code"
+    },
+    {
+      "name": "payment.momo.access-key",
+      "type": "java.lang.String",
+      "description": "MoMo access key"
+    },
+    {
+      "name": "payment.momo.secret-key",
+      "type": "java.lang.String",
+      "description": "MoMo secret key"
+    }
+  ]
+}

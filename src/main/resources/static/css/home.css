@@ -216,8 +216,10 @@
     gap: 16px;
     overflow-x: auto;
     padding: 10px 0;
-    scrollbar-width: none;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
     cursor: grab;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -818,3 +820,41 @@ body.page-loaded {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* ===== HELPER CLASSES (avoid inline styles) ===== */
+.field-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.book-cover-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f3f0;
+    height: 200px;
+}
+
+.book-cover-empty i {
+    font-size: 3rem;
+    color: #ccc;
+}
+
+.bs-cat-icon-pink { background: #FFE4E6; }
+.bs-cat-icon-pink i { color: #E11D48; }
+.bs-cat-icon-blue { background: #E0E7FF; }
+.bs-cat-icon-blue i { color: #4F46E5; }
+.bs-cat-icon-yellow { background: #FEF3C7; }
+.bs-cat-icon-yellow i { color: #D97706; }
+
+.service-icon-shipping { background: linear-gradient(135deg, #74B9FF, #0984E3); }
+.service-icon-library { background: linear-gradient(135deg, #FDCB6E, #E17055); }
+.service-icon-ai { background: linear-gradient(135deg, #A29BFE, #6C5CE7); }
+.service-icon-authentic { background: linear-gradient(135deg, #55EFC4, #00B894); }
+
+.stat-card-books { background: #74B9FF; }
+.stat-card-readers { background: #F4A6C1; }
+.stat-card-publishers { background: #FDCB6E; }
+.stat-card-satisfaction { background: #55EFC4; }

@@ -535,3 +535,17 @@
         display: none;
     }
 }
+
+/* ===== Book Form: Cover & Media ===== */
+.cover-preview {
+    max-height: 250px;
+}
+
+.cover-placeholder {
+    width: 150px;
+    height: 200px;
+}
+
+.video-preview {
+    max-height: 200px;
+}

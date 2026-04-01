@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import fit.hutech.BuiBaoHan.constants.BookStatus;
 import fit.hutech.BuiBaoHan.entities.Book;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 @Transactional(isolation = Isolation.SERIALIZABLE,
         rollbackFor = {Exception.class, Throwable.class})
 public class BookService {

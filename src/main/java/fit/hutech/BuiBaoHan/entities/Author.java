@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CascadeType;
@@ -70,6 +71,10 @@ public class Author {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    /** Số lượng sách - computed bằng SQL subquery để tránh lazy loading */
+    @Formula("(SELECT COUNT(*) FROM book b WHERE b.author_id = id)")
+    private Integer bookCount;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -103,9 +108,10 @@ public class Author {
 
     /**
      * Lấy số lượng sách của tác giả
+     * Sử dụng giá trị từ @Formula (tính bằng SQL subquery)
      */
     public int getBookCount() {
-        return books.size();
+        return bookCount != null ? bookCount : 0;
     }
 
     @Override

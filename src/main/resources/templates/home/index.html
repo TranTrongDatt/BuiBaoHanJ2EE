@@ -77,7 +77,7 @@
                         <span class="cat-icon">
                             <img th:if="${field.image != null and !field.image.isEmpty()}" 
                                  th:src="@{${field.image}}" 
-                                 alt="" style="width: 32px; height: 32px; object-fit: cover; border-radius: 8px;" />
+                                 alt="" class="field-icon-img" />
                             <i th:unless="${field.image != null and !field.image.isEmpty()}" class="bi bi-book"></i>
                         </span>
                         <span class="cat-name" th:text="${field.name}">Lĩnh vực</span>
@@ -96,8 +96,8 @@
                 </h2>
                 <div class="swiper-nav">
                     <a href="/books" class="view-all-btn">Xem tất cả</a>
-                    <button class="nav-btn popular-prev"><i class="bi bi-chevron-left"></i></button>
-                    <button class="nav-btn popular-next"><i class="bi bi-chevron-right"></i></button>
+                    <button class="nav-btn popular-prev" title="Trước"><i class="bi bi-chevron-left"></i></button>
+                    <button class="nav-btn popular-next" title="Sau"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
             
@@ -109,13 +109,13 @@
                             <a th:href="@{'/books/' + ${book.slug != null ? book.slug : book.id}}" class="book-cover-link">
                                 <div class="book-cover">
                                     <img th:if="${book.coverImage != null and !book.coverImage.isEmpty()}" 
-                                         th:src="@{${book.coverImage}}" th:alt="${book.title}"/>
+                                         th:src="@{${book.coverImage}}" th:alt="${book.title}" alt="Book cover"/>
                                     <img th:unless="${book.coverImage != null and !book.coverImage.isEmpty()}" 
-                                         th:src="@{/images/no-cover.png}" th:alt="${book.title}"/>
+                                         th:src="@{/images/banner/hero-books.png}" th:alt="${book.title}" alt="Book cover"/>
                                     <div class="book-ribbon" th:if="${book.isFeatured}">Hot</div>
                                     <div class="book-ribbon sale" th:if="${book.getDiscountPercent() > 0}"
                                          th:text="'-' + ${book.getDiscountPercent()} + '%'">-20%</div>
-                                    <button class="book-wishlist"><i class="bi bi-heart"></i></button>
+                                    <button class="book-wishlist" title="Thêm vào yêu thích"><i class="bi bi-heart"></i></button>
                                 </div>
                             </a>
                             <div class="book-info">
@@ -135,8 +135,8 @@
                     <!-- Fallback nếu chưa có sản phẩm nào -->
                     <div class="swiper-slide" th:if="${#lists.isEmpty(featuredBooks)}">
                         <div class="book-card">
-                            <div class="book-cover" style="display:flex;align-items:center;justify-content:center;background:#f9f3f0;height:200px;">
-                                <i class="bi bi-book" style="font-size: 3rem; color: #ccc;"></i>
+                            <div class="book-cover book-cover-empty">
+                                <i class="bi bi-book"></i>
                             </div>
                             <div class="book-info">
                                 <h3 class="book-title">Chưa có sản phẩm nổi bật</h3>
@@ -172,8 +172,8 @@
                 </div>
                 <div class="bestseller-categories">
                     <a href="/books?category=sach-thieu-nhi" class="bs-cat-card">
-                        <div class="bs-cat-icon" style="background: #FFE4E6;">
-                            <i class="bi bi-emoji-smile" style="color: #E11D48;"></i>
+                        <div class="bs-cat-icon bs-cat-icon-pink">
+                            <i class="bi bi-emoji-smile"></i>
                         </div>
                         <div class="bs-cat-info">
                             <h4>Top 50 sách thiếu nhi</h4>
@@ -181,8 +181,8 @@
                         </div>
                     </a>
                     <a href="/books?category=sach-kinh-dien" class="bs-cat-card">
-                        <div class="bs-cat-icon" style="background: #E0E7FF;">
-                            <i class="bi bi-bank" style="color: #4F46E5;"></i>
+                        <div class="bs-cat-icon bs-cat-icon-blue">
+                            <i class="bi bi-bank"></i>
                         </div>
                         <div class="bs-cat-info">
                             <h4>Top 50 sách kinh điển</h4>
@@ -190,8 +190,8 @@
                         </div>
                     </a>
                     <a href="/books?category=sach-khoa-hoc" class="bs-cat-card">
-                        <div class="bs-cat-icon" style="background: #FEF3C7;">
-                            <i class="bi bi-rocket" style="color: #D97706;"></i>
+                        <div class="bs-cat-icon bs-cat-icon-yellow">
+                            <i class="bi bi-rocket"></i>
                         </div>
                         <div class="bs-cat-info">
                             <h4>Top 50 sách Sci-Fi</h4>
@@ -212,28 +212,28 @@
             </div>
             <div class="services-grid">
                 <div class="service-card">
-                    <div class="service-icon" style="background: linear-gradient(135deg, #74B9FF, #0984E3);">
+                    <div class="service-icon service-icon-shipping">
                         <i class="bi bi-truck"></i>
                     </div>
                     <h3>Giao hàng nhanh</h3>
                     <p>Giao hàng trong 24h cho khu vực nội thành TP.HCM</p>
                 </div>
                 <div class="service-card">
-                    <div class="service-icon" style="background: linear-gradient(135deg, #FDCB6E, #E17055);">
+                    <div class="service-icon service-icon-library">
                         <i class="bi bi-credit-card-2-front"></i>
                     </div>
                     <h3>Thẻ thư viện</h3>
                     <p>Đăng ký thẻ thư viện để mượn sách miễn phí</p>
                 </div>
                 <div class="service-card">
-                    <div class="service-icon" style="background: linear-gradient(135deg, #A29BFE, #6C5CE7);">
+                    <div class="service-icon service-icon-ai">
                         <i class="bi bi-robot"></i>
                     </div>
                     <h3>AI Chatbot</h3>
                     <p>Tư vấn sách, đặt mượn sách nhanh chóng với AI</p>
                 </div>
                 <div class="service-card">
-                    <div class="service-icon" style="background: linear-gradient(135deg, #55EFC4, #00B894);">
+                    <div class="service-icon service-icon-authentic">
                         <i class="bi bi-shield-check"></i>
                     </div>
                     <h3>Sách chính hãng</h3>
@@ -247,22 +247,22 @@
     <section class="stats-section">
         <div class="section-container">
             <div class="stats-grid">
-                <div class="stat-card" style="background: #74B9FF;">
+                <div class="stat-card stat-card-books">
                     <div class="stat-icon"><i class="bi bi-book"></i></div>
                     <h3 class="stat-number">10,000+</h3>
                     <p>Đầu sách</p>
                 </div>
-                <div class="stat-card" style="background: #F4A6C1;">
+                <div class="stat-card stat-card-readers">
                     <div class="stat-icon"><i class="bi bi-people"></i></div>
                     <h3 class="stat-number">50,000+</h3>
                     <p>Độc giả</p>
                 </div>
-                <div class="stat-card" style="background: #FDCB6E;">
+                <div class="stat-card stat-card-publishers">
                     <div class="stat-icon"><i class="bi bi-award"></i></div>
                     <h3 class="stat-number">100+</h3>
                     <p>Nhà xuất bản</p>
                 </div>
-                <div class="stat-card" style="background: #55EFC4;">
+                <div class="stat-card stat-card-satisfaction">
                     <div class="stat-icon"><i class="bi bi-star"></i></div>
                     <h3 class="stat-number">99%</h3>
                     <p>Hài lòng</p>

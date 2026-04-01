@@ -1,6 +1,7 @@
 package fit.hutech.BuiBaoHan.services;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class PdfService {
 
             log.info("Generated PDF invoice for order: {}", order.getOrderCode());
             return outputStream.toByteArray();
-        } catch (Exception e) {
+        } catch (com.lowagie.text.DocumentException e) {
             log.error("Error generating PDF for order {}: {}", order.getOrderCode(), e.getMessage(), e);
             throw new RuntimeException("Không thể tạo hóa đơn PDF: " + e.getMessage(), e);
         }
@@ -77,7 +78,7 @@ public class PdfService {
                     log.info("Loaded DejaVuSans font from resources");
                     return;
                 }
-            } catch (Exception e) {
+            } catch (IOException | com.lowagie.text.DocumentException e) {
                 log.debug("DejaVuSans font not found in resources, trying system fonts");
             }
             
@@ -97,13 +98,13 @@ public class PdfService {
                         log.info("Loaded system font: {}", fontPath);
                         return;
                     }
-                } catch (Exception e) {
+                } catch (IOException | com.lowagie.text.DocumentException e) {
                     log.debug("Could not load font: {}", fontPath);
                 }
             }
             
             log.warn("No Vietnamese-supporting font found, using default fonts");
-        } catch (Exception e) {
+        } catch (com.lowagie.text.DocumentException e) {
             log.error("Error registering Vietnamese font: {}", e.getMessage());
         }
     }

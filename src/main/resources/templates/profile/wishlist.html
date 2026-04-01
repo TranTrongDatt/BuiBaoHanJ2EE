@@ -64,15 +64,18 @@
             height: 34px;
             border-radius: 50%;
             border: none;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             color: #e53935;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .wishlist-card .remove-btn:hover {
             background: #e53935;
@@ -186,6 +189,15 @@
             z-index: 9999;
             min-width: 280px;
         }
+        .wishlist-toast.hidden { display: none; }
+        .wishlist-explore-btn {
+            display: inline-block;
+            border-radius: 10px;
+            text-decoration: none;
+            background: #e91e63;
+            color: #fff;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -219,13 +231,14 @@
                     <div class="wishlist-card card h-100" th:id="'wishlist-item-' + ${item.book.id}">
                         <div class="card-img-wrap">
                             <a th:href="${item.book.slug != null and !item.book.slug.isEmpty()} ? @{/books/{slug}(slug=${item.book.slug})} : @{/books/{id}(id=${item.book.id})}">
-                                <img th:src="@{${item.book.coverImage != null and item.book.coverImage.startsWith('/') ? item.book.coverImage : (item.book.coverImage != null ? '/uploads/books/' + item.book.coverImage : '/images/banner/hero-books.png')}}" 
+                                <img th:src="@{${item.book.coverImage != null and (item.book.coverImage.startsWith('/') or item.book.coverImage.startsWith('http')) ? item.book.coverImage : (item.book.coverImage != null ? '/uploads/books/' + item.book.coverImage : '/images/banner/hero-books.png')}}" 
                                      th:alt="${item.book.title}"
+                                     alt="Book cover"
                                      onerror="this.onerror=null; this.src='/images/banner/hero-books.png';">
                             </a>
                             <button type="button" class="remove-btn"
                                     th:data-book-id="${item.book.id}"
-                                    onclick="removeFromWishlist(this)"
+                                    onclick="removeFromWishlist(event, this)"
                                     title="Xóa khỏi yêu thích">
                                 <i class="bi bi-x-lg"></i>
                             </button>
@@ -245,7 +258,7 @@
                         <div class="card-actions">
                             <button type="button" class="btn btn-add-cart"
                                     th:data-book-id="${item.book.id}"
-                                    onclick="moveToCart(this)">
+                                    onclick="moveToCart(event, this)">
                                 <i class="bi bi-cart-plus me-1"></i>Thêm vào giỏ
                             </button>
                             <a th:href="${item.book.slug != null and !item.book.slug.isEmpty()} ? @{/books/{slug}(slug=${item.book.slug})} : @{/books/{id}(id=${item.book.id})}" class="btn btn-view">
@@ -262,14 +275,14 @@
             <i class="bi bi-heart"></i>
             <h4>Danh sách yêu thích trống</h4>
             <p>Hãy thêm sách yêu thích để xem lại sau nhé!</p>
-            <a th:href="@{/books}" class="btn btn-add-cart px-4 py-2" style="display:inline-block; border-radius:10px; text-decoration:none; background:#e91e63; color:#fff; font-weight:600;">
+            <a th:href="@{/books}" class="btn btn-add-cart px-4 py-2 wishlist-explore-btn">
                 <i class="bi bi-book me-2"></i>Khám phá sách ngay
             </a>
         </div>
     </div>
 
     <!-- Toast container -->
-    <div class="wishlist-toast" id="wishlistToast" style="display:none;">
+    <div class="wishlist-toast hidden" id="wishlistToast">
         <div class="alert alert-success alert-dismissible fade show mb-0 shadow" role="alert" id="toastContent">
             <i class="bi bi-check-circle me-2"></i><span id="toastMessage"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -293,8 +306,18 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        function removeFromWishlist(btn) {
+        function removeFromWishlist(event, btn) {
+            // Ngăn event lan truyền và hành vi mặc định
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             const bookId = btn.dataset.bookId;
+            if (!bookId) {
+                showToast('Không tìm thấy ID sách!', true);
+                return;
+            }
             if (!confirm('Bạn có chắc muốn xóa sách này khỏi danh sách yêu thích?')) return;
 
             const headers = { 'Content-Type': 'application/json' };
@@ -302,31 +325,55 @@
 
             fetch('/api/wishlist/' + bookId, {
                 method: 'DELETE',
-                headers: headers
+                headers: headers,
+                credentials: 'same-origin'
             })
             .then(response => {
-                if (response.ok) {
+                return response.text().then(text => {
+                    let body;
+                    try {
+                        body = JSON.parse(text);
+                    } catch (e) {
+                        body = { success: false, message: text || 'Lỗi server' };
+                    }
+                    return { status: response.status, ok: response.ok, body };
+                });
+            })
+            .then(({ status, ok, body }) => {
+                if (ok || body.success) {
                     const card = document.getElementById('wishlist-item-' + bookId);
                     if (card) {
-                        card.closest('.col-6').style.transition = 'all 0.3s ease';
-                        card.closest('.col-6').style.opacity = '0';
-                        card.closest('.col-6').style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            card.closest('.col-6').remove();
-                            // Check if list is now empty
-                            const remaining = document.querySelectorAll('.wishlist-card');
-                            if (remaining.length === 0) location.reload();
-                        }, 300);
+                        const col = card.closest('.col-6');
+                        if (col) {
+                            col.style.transition = 'all 0.3s ease';
+                            col.style.opacity = '0';
+                            col.style.transform = 'scale(0.9)';
+                            setTimeout(() => {
+                                col.remove();
+                                // Check if list is now empty
+                                const remaining = document.querySelectorAll('.wishlist-card');
+                                if (remaining.length === 0) location.reload();
+                            }, 300);
+                        }
                     }
                     showToast('Đã xóa khỏi danh sách yêu thích');
                 } else {
-                    showToast('Có lỗi xảy ra, vui lòng thử lại!', true);
+                    showToast(body.message || 'Có lỗi xảy ra, vui lòng thử lại!', true);
                 }
             })
-            .catch(() => showToast('Có lỗi xảy ra!', true));
+            .catch(err => {
+                console.error('Wishlist delete error:', err);
+                showToast('Có lỗi xảy ra, vui lòng thử lại!', true);
+            });
         }
 
-        function moveToCart(btn) {
+        function moveToCart(event, btn) {
+            // Ngăn event lan truyền và hành vi mặc định
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             const bookId = btn.dataset.bookId;
             const headers = { 'Content-Type': 'application/json' };
             if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;

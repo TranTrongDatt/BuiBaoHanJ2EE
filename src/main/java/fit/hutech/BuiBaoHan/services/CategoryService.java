@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import fit.hutech.BuiBaoHan.entities.Category;
 import fit.hutech.BuiBaoHan.repositories.ICategoryRepository;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Validated
 @Transactional(isolation = Isolation.SERIALIZABLE,
         rollbackFor = {Exception.class, Throwable.class})
 public class CategoryService {

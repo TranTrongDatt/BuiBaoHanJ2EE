@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Đăng ký Shipper - MiniVerse</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/shipper.css}">
+    
+    <style>
+        .setup-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .setup-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .setup-header {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .setup-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .setup-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        .setup-body {
+            padding: 30px;
+        }
+        .form-section {
+            margin-bottom: 25px;
+        }
+        .form-section-title {
+            font-weight: 600;
+            color: #17a2b8;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-card">
+            <div class="setup-header">
+                <i class="bi bi-truck display-4"></i>
+                <h1 class="mt-3">Đăng ký Shipper</h1>
+                <p>Hoàn thành thông tin để bắt đầu giao hàng</p>
+            </div>
+            
+            <div class="setup-body">
+                <!-- Alert messages -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <span th:text="${error}">Lỗi</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <form th:action="@{/shipper/account/register}" method="post" class="needs-validation" novalidate>
+                    
+                    <!-- Personal Info -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-person me-2"></i>Thông tin cá nhân
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="fullName" required 
+                                       placeholder="Nguyễn Văn A">
+                                <div class="invalid-feedback">Vui lòng nhập họ tên</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Giới tính <span class="text-danger">*</span></label>
+                                <select class="form-select" name="gender" required>
+                                    <option value="">Chọn...</option>
+                                    <option value="MALE">Nam</option>
+                                    <option value="FEMALE">Nữ</option>
+                                    <option value="OTHER">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" name="phone" required 
+                                       placeholder="0987654321" pattern="[0-9]{10,11}">
+                                <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="dateOfBirth" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="address" rows="2" required 
+                                          placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số CMND/CCCD <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="idCardNumber" required 
+                                       placeholder="012345678901" pattern="[0-9]{9,12}">
+                                <div class="invalid-feedback">Số CMND/CCCD không hợp lệ</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Loại hợp đồng</label>
+                                <select class="form-select" name="contractType">
+                                    <option value="PART_TIME">Bán thời gian</option>
+                                    <option value="FULL_TIME">Toàn thời gian</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Info -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-bicycle me-2"></i>Thông tin phương tiện
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Loại phương tiện <span class="text-danger">*</span></label>
+                                <select class="form-select" name="vehicleType" required>
+                                    <option value="">Chọn...</option>
+                                    <option value="MOTORBIKE">Xe máy</option>
+                                    <option value="EBIKE">Xe đạp điện</option>
+                                    <option value="BICYCLE">Xe đạp</option>
+                                    <option value="CAR">Ô tô</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Biển số xe <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="licensePlate" required 
+                                       placeholder="59A1-12345">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Terms -->
+                    <div class="form-section">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                Tôi đồng ý với <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">điều khoản và quy định</a> làm việc
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check2-circle me-2"></i>Đăng ký làm Shipper
+                        </button>
+                        <a th:href="@{/}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại trang chủ
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Terms Modal -->
+    <div class="modal fade" id="termsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Điều khoản và Quy định làm việc</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>1. Thời gian làm việc</h6>
+                    <ul>
+                        <li>Giờ làm việc tiêu chuẩn: 08:00 - 17:00</li>
+                        <li>Làm tối thiểu 6 giờ/ngày, tối đa 12 giờ/ngày</li>
+                        <li>Chấm công 2-4 lần/ngày (vào ca, nghỉ trưa, hết nghỉ, tan ca)</li>
+                    </ul>
+                    
+                    <h6>2. Lương và Phụ cấp</h6>
+                    <ul>
+                        <li>Lương giờ: 30,000 VNĐ/giờ</li>
+                        <li>Tăng ca: x2 lương giờ</li>
+                        <li>Phụ cấp xăng: 500,000 VNĐ/tháng</li>
+                        <li>Phụ cấp ăn: 100,000 VNĐ/ngày làm việc</li>
+                    </ul>
+                    
+                    <h6>3. Quy định phạt</h6>
+                    <ul>
+                        <li>Đi trễ: Phạt 8,000 VNĐ/phút trễ</li>
+                        <li>Thiếu chấm công: Phạt 8,000 VNĐ/lần thiếu</li>
+                        <li>Giao hàng thất bại do lỗi shipper: Phạt theo quy định</li>
+                    </ul>
+                    
+                    <h6>4. Bảo hiểm</h6>
+                    <ul>
+                        <li>BHXH: Shipper đóng 8%</li>
+                        <li>BHYT: Shipper đóng 1.5%</li>
+                        <li>BHTN: Shipper đóng 1%</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đã hiểu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+</body>
+</html>

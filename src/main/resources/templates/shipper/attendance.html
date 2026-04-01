@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <th:block th:replace="~{shipper/layout :: head}"></th:block>
+</head>
+<body class="shipper-body">
+    <div class="shipper-wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{shipper/layout :: sidebar}"></th:block>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleShipperSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="shipper-main">
+            <!-- Top Bar -->
+            <th:block th:replace="~{shipper/layout :: topbar}"></th:block>
+            
+            <!-- Content -->
+            <main class="shipper-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Chấm công</h2>
+                        <p class="text-muted mb-0" th:text="${#temporals.format(today, 'EEEE, dd/MM/yyyy')}">Thứ Hai, 01/01/2024</p>
+                    </div>
+                    <div>
+                        <a th:href="@{/shipper/attendance/history}" class="btn btn-outline-primary">
+                            <i class="bi bi-clock-history me-2"></i>Lịch sử chấm công
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Current Time -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="shipper-card text-center py-4">
+                            <div class="current-time-display">
+                                <span id="currentTime" class="display-3 fw-bold">00:00:00</span>
+                            </div>
+                            <p class="text-muted mb-0">Giờ hiện tại</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Punch Buttons -->
+                <div class="row g-4 mb-4">
+                    <!-- CHECK_IN -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="punch-card" th:classappend="${attendance != null and attendance.hasCheckedIn()} ? 'completed' : ''">
+                            <div class="punch-icon check-in">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </div>
+                            <h5>Vào ca</h5>
+                            <p class="text-muted">Tiêu chuẩn: 08:00</p>
+                            
+                            <div th:if="${attendance != null and attendance.hasCheckedIn()}" class="punch-time">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span th:text="${attendance.checkInTime != null ? #temporals.format(attendance.checkInTime, 'HH:mm:ss') : ''}">08:00:00</span>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary btn-lg w-100 mt-3" 
+                                    th:disabled="${attendance != null and attendance.hasCheckedIn()}"
+                                    onclick="doPunch('CHECK_IN')">
+                                <i class="bi bi-play-fill me-2"></i>Chấm vào ca
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- BREAK_START -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="punch-card" th:classappend="${attendance != null and attendance.hasPunchType('BREAK_START')} ? 'completed' : ''">
+                            <div class="punch-icon break-start">
+                                <i class="bi bi-cup-hot"></i>
+                            </div>
+                            <h5>Bắt đầu nghỉ</h5>
+                            <p class="text-muted">Nghỉ trưa</p>
+                            
+                            <div th:if="${attendance != null and attendance.getBreakStartTime() != null}" class="punch-time">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span th:text="${#temporals.format(attendance.breakStartTime, 'HH:mm:ss')}">12:00:00</span>
+                            </div>
+                            
+                            <button type="button" class="btn btn-warning btn-lg w-100 mt-3" 
+                                    th:disabled="${attendance == null or !attendance.hasCheckedIn() or attendance.hasPunchType('BREAK_START')}"
+                                    onclick="doPunch('BREAK_START')">
+                                <i class="bi bi-pause-fill me-2"></i>Bắt đầu nghỉ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- BREAK_END -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="punch-card" th:classappend="${attendance != null and attendance.hasPunchType('BREAK_END')} ? 'completed' : ''">
+                            <div class="punch-icon break-end">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <h5>Kết thúc nghỉ</h5>
+                            <p class="text-muted">Quay lại làm việc</p>
+                            
+                            <div th:if="${attendance != null and attendance.getBreakEndTime() != null}" class="punch-time">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span th:text="${#temporals.format(attendance.breakEndTime, 'HH:mm:ss')}">13:00:00</span>
+                            </div>
+                            
+                            <button type="button" class="btn btn-info btn-lg w-100 mt-3" 
+                                    th:disabled="${attendance == null or !attendance.hasPunchType('BREAK_START') or attendance.hasPunchType('BREAK_END')}"
+                                    onclick="doPunch('BREAK_END')">
+                                <i class="bi bi-play-fill me-2"></i>Kết thúc nghỉ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- CHECK_OUT -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="punch-card" th:classappend="${attendance != null and attendance.hasCheckedOut()} ? 'completed' : ''">
+                            <div class="punch-icon check-out">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </div>
+                            <h5>Tan ca</h5>
+                            <p class="text-muted">Tiêu chuẩn: 17:00</p>
+                            
+                            <div th:if="${attendance != null and attendance.hasCheckedOut()}" class="punch-time">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span th:text="${attendance.checkOutTime != null ? #temporals.format(attendance.checkOutTime, 'HH:mm:ss') : ''}">17:00:00</span>
+                            </div>
+                            
+                            <button type="button" class="btn btn-danger btn-lg w-100 mt-3" 
+                                    th:disabled="${attendance == null or !attendance.hasCheckedIn() or attendance.hasCheckedOut()}"
+                                    onclick="doPunch('CHECK_OUT')">
+                                <i class="bi bi-stop-fill me-2"></i>Chấm tan ca
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Summary -->
+                <div class="row g-4" th:if="${attendance != null}">
+                    <div class="col-lg-6">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-clock me-2"></i>Thống kê hôm nay</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Trạng thái</span>
+                                            <span class="stat-value badge" 
+                                                  th:classappend="${attendance.status.name() == 'COMPLETE' ? 'bg-success' : 'bg-warning'}"
+                                                  th:text="${attendance.status.displayName}">Chưa hoàn thành</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Giờ làm thực tế</span>
+                                            <span class="stat-value" th:text="${#numbers.formatDecimal(attendance.actualWorkHours ?: 0, 1, 1) + ' giờ'}">0 giờ</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Giờ tăng ca</span>
+                                            <span class="stat-value" th:text="${#numbers.formatDecimal(attendance.overtimeHours ?: 0, 1, 1) + ' giờ'}">0 giờ</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Trễ</span>
+                                            <span class="stat-value" th:classappend="${attendance.lateMinutes > 0 ? 'text-danger' : ''}"
+                                                  th:text="${(attendance.lateMinutes ?: 0) + ' phút'}">0 phút</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Thu nhập hôm nay</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Lương cơ bản</span>
+                                            <span class="stat-value" th:text="${#numbers.formatDecimal(attendance.baseEarning ?: 0, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Tăng ca</span>
+                                            <span class="stat-value text-success" th:text="${#numbers.formatDecimal(attendance.overtimeEarning ?: 0, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Tiền ăn</span>
+                                            <span class="stat-value" th:text="${#numbers.formatDecimal(attendance.mealAllowance ?: 0, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Khấu trừ</span>
+                                            <span class="stat-value text-danger" th:text="${'-' + #numbers.formatDecimal(attendance.penaltyDeduction ?: 0, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>Thu nhập ròng</strong>
+                                    <span class="fs-4 fw-bold text-primary" th:text="${#numbers.formatDecimal(attendance.netEarning ?: 0, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quy định chấm công -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="shipper-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quy định chấm công</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-clock text-primary me-2"></i>Thời gian</h6>
+                                        <ul class="mb-0">
+                                            <li>Giờ vào ca: <strong>08:00</strong></li>
+                                            <li>Giờ tan ca: <strong>17:00</strong></li>
+                                            <li>Làm tối thiểu: <strong th:text="${config.minHoursPerDay}">6</strong> giờ/ngày</li>
+                                            <li>Làm tối đa: <strong th:text="${config.maxHoursPerDay}">12</strong> giờ/ngày</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-cash text-success me-2"></i>Lương</h6>
+                                        <ul class="mb-0">
+                                            <li>Lương giờ: <strong th:text="${#numbers.formatDecimal(config.hourlyRate, 0, 'COMMA', 0, 'POINT')}">30,000</strong> VNĐ</li>
+                                            <li>Tăng ca: <strong>x<span th:text="${config.overtimeMultiplier}">2</span></strong> lương giờ</li>
+                                            <li>Tiền ăn: <strong th:text="${#numbers.formatDecimal(config.mealAllowanceDaily, 0, 'COMMA', 0, 'POINT')}">100,000</strong> VNĐ/ngày</li>
+                                            <li>Tiền xăng: <strong th:text="${#numbers.formatDecimal(config.gasAllowanceMonthly, 0, 'COMMA', 0, 'POINT')}">500,000</strong> VNĐ/tháng</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-exclamation-triangle text-danger me-2"></i>Phạt</h6>
+                                        <ul class="mb-0">
+                                            <li>Đi trễ: <strong th:text="${#numbers.formatDecimal(config.latePenaltyPerMinute, 0, 'COMMA', 0, 'POINT')}">8,000</strong> VNĐ/phút</li>
+                                            <li>Thiếu chấm công: <strong th:text="${#numbers.formatDecimal(config.missingPunchPenalty, 0, 'COMMA', 0, 'POINT')}">8,000</strong> VNĐ/lần</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/shipper.js}"></script>
+    <script>
+        // Update current time every second
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+        
+        // Do punch action
+        function doPunch(punchType) {
+            // Get location if available
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        sendPunch(punchType, position.coords.latitude, position.coords.longitude);
+                    },
+                    () => {
+                        sendPunch(punchType, null, null);
+                    }
+                );
+            } else {
+                sendPunch(punchType, null, null);
+            }
+        }
+        
+        function sendPunch(punchType, lat, lng) {
+            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+            
+            let url = '/shipper/attendance/punch?punchType=' + punchType;
+            if (lat != null && lng != null) {
+                url += '&latitude=' + lat + '&longitude=' + lng;
+            }
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi chấm công');
+            });
+        }
+    </script>
+</body>
+</html>

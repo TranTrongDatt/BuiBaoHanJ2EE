@@ -165,6 +165,11 @@ public class SecurityConfig {
         csrfHandler.setCsrfRequestAttributeName("_csrf");
         
         return http
+                // Disable Spring Security's default X-Frame-Options
+                // (SecurityHeadersFilter quản lý header này với SAMEORIGIN)
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                )
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(csrfHandler)

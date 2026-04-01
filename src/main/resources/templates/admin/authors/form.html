@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Navbar -->
+            <header th:replace="~{admin/layout :: topbar}"></header>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1" th:text="${author.id == null ? 'Thêm Tác giả' : 'Sửa Tác giả'}">Thêm Tác giả</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/admin/authors}">Tác giả</a></li>
+                                <li class="breadcrumb-item active" th:text="${author.id == null ? 'Thêm mới' : 'Chỉnh sửa'}"></li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <a th:href="@{/admin/authors}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Quay lại
+                    </a>
+                </div>
+
+                <!-- Form Card -->
+                <div class="card">
+                    <div class="card-body">
+                        <form th:action="@{/admin/authors/save}" 
+                              th:object="${author}" 
+                              method="post"
+                              enctype="multipart/form-data">
+                            
+                            <input type="hidden" th:field="*{id}">
+                            <input type="hidden" th:field="*{createdAt}">
+                            <input type="hidden" th:field="*{avatar}">
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <!-- Name -->
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">
+                                            Tên tác giả <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="name" 
+                                               th:field="*{name}"
+                                               th:classappend="${#fields.hasErrors('name') ? 'is-invalid' : ''}"
+                                               placeholder="Nhập tên tác giả"
+                                               required>
+                                        <div th:if="${#fields.hasErrors('name')}" class="invalid-feedback" th:errors="*{name}"></div>
+                                    </div>
+
+                                    <!-- Nationality -->
+                                    <div class="mb-3">
+                                        <label for="nationality" class="form-label">Quốc tịch</label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="nationality" 
+                                               th:field="*{nationality}"
+                                               placeholder="Ví dụ: Việt Nam, Mỹ, Anh..."
+                                               list="nationalityList">
+                                        <datalist id="nationalityList">
+                                            <option th:each="nat : ${nationalities}" th:value="${nat}"></option>
+                                        </datalist>
+                                    </div>
+
+                                    <div class="row">
+                                        <!-- Birth Date -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="birthDate" class="form-label">Ngày sinh</label>
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   id="birthDate" 
+                                                   th:field="*{birthDate}">
+                                        </div>
+
+                                        <!-- Death Date -->
+                                        <div class="col-md-6 mb-3">
+                                            <label for="deathDate" class="form-label">Ngày mất</label>
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   id="deathDate" 
+                                                   th:field="*{deathDate}">
+                                            <div class="form-text">Để trống nếu tác giả còn sống</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Website -->
+                                    <div class="mb-3">
+                                        <label for="website" class="form-label">Website</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                            <input type="url" 
+                                                   class="form-control" 
+                                                   id="website" 
+                                                   th:field="*{website}"
+                                                   placeholder="https://example.com">
+                                        </div>
+                                    </div>
+
+                                    <!-- Biography -->
+                                    <div class="mb-3">
+                                        <label for="biography" class="form-label">Tiểu sử</label>
+                                        <textarea class="form-control" 
+                                                  id="biography" 
+                                                  th:field="*{biography}"
+                                                  rows="6"
+                                                  placeholder="Nhập tiểu sử tác giả..."></textarea>
+                                        <div class="form-text">Tối đa 2000 ký tự</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <!-- Avatar Upload -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Ảnh đại diện</label>
+                                        <div class="border rounded p-3 text-center">
+                                            <img th:if="${author.avatar != null && !author.avatar.isEmpty()}" 
+                                                 th:src="@{${author.avatar}}"
+                                                 alt="Avatar"
+                                                 id="avatarPreview"
+                                                 class="img-fluid rounded-circle mb-3"
+                                                 style="width: 150px; height: 150px; object-fit: cover;">
+                                            <div th:unless="${author.avatar != null && !author.avatar.isEmpty()}"
+                                                 id="avatarPlaceholder"
+                                                 class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                 style="width: 150px; height: 150px;">
+                                                <i class="bi bi-person display-4 text-muted"></i>
+                                            </div>
+                                            <input type="file" 
+                                                   name="avatarFile" 
+                                                   id="avatarFile"
+                                                   class="form-control"
+                                                   accept="image/*"
+                                                   onchange="previewAvatar(this)">
+                                            <div class="form-text mt-2">Ảnh vuông, tối đa 2MB</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Active Status -->
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" 
+                                                   class="form-check-input" 
+                                                   id="isActive"
+                                                   th:field="*{isActive}">
+                                            <label class="form-check-label" for="isActive">
+                                                Hiển thị tác giả
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Tắt để ẩn tác giả khỏi danh sách hiển thị</div>
+                                    </div>
+
+                                    <!-- Info Card -->
+                                    <div class="card bg-light" th:if="${author.id != null}">
+                                        <div class="card-body small">
+                                            <h6 class="card-title">
+                                                <i class="bi bi-info-circle me-1"></i> Thông tin
+                                            </h6>
+                                            <p class="mb-1">
+                                                <strong>ID:</strong> 
+                                                <span th:text="${author.id}"></span>
+                                            </p>
+                                            <p class="mb-1" th:if="${author.createdAt != null}">
+                                                <strong>Ngày tạo:</strong> 
+                                                <span th:text="${#temporals.format(author.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                            </p>
+                                            <p class="mb-0" th:if="${author.updatedAt != null}">
+                                                <strong>Cập nhật:</strong> 
+                                                <span th:text="${#temporals.format(author.updatedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="border-top pt-4 mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    <span th:text="${author.id == null ? 'Thêm tác giả' : 'Cập nhật'}"></span>
+                                </button>
+                                <a th:href="@{/admin/authors}" class="btn btn-outline-secondary ms-2">
+                                    <i class="bi bi-x-lg me-2"></i>Hủy
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function previewAvatar(input) {
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (!preview) {
+                        const img = document.createElement('img');
+                        img.id = 'avatarPreview';
+                        img.className = 'img-fluid rounded-circle mb-3';
+                        img.style.width = '150px';
+                        img.style.height = '150px';
+                        img.style.objectFit = 'cover';
+                        img.src = e.target.result;
+                        if (placeholder) {
+                            placeholder.replaceWith(img);
+                        }
+                    } else {
+                        preview.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Validate death date > birth date
+        document.getElementById('deathDate').addEventListener('change', function() {
+            const birthDate = document.getElementById('birthDate').value;
+            const deathDate = this.value;
+            
+            if (birthDate && deathDate && deathDate < birthDate) {
+                alert('Ngày mất phải sau ngày sinh!');
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>

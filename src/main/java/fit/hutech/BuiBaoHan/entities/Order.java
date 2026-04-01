@@ -146,10 +146,56 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Quan hệ với User
+    // Quan hệ với User (Khách hàng)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    // ==================== Quan hệ với Shipper ====================
+    
+    /**
+     * Shipper được gán giao đơn này
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shipper_id")
+    private User shipper;
+
+    /**
+     * Thời điểm shipper nhận đơn từ shop
+     */
+    @Column(name = "picked_up_at")
+    private LocalDateTime pickedUpAt;
+
+    /**
+     * Thời điểm bắt đầu giao hàng
+     */
+    @Column(name = "delivery_started_at")
+    private LocalDateTime deliveryStartedAt;
+
+    /**
+     * Thời điểm hoàn thành giao hàng
+     */
+    @Column(name = "delivery_completed_at")
+    private LocalDateTime deliveryCompletedAt;
+
+    /**
+     * Ghi chú của shipper khi giao hàng
+     */
+    @Column(name = "delivery_notes", columnDefinition = "TEXT")
+    private String deliveryNotes;
+
+    /**
+     * Ảnh xác nhận giao hàng (URL)
+     */
+    @Column(name = "delivery_proof_image", length = 500)
+    private String deliveryProofImage;
+
+    /**
+     * Tiền ship mà shipper được nhận
+     */
+    @Builder.Default
+    @Column(name = "shipper_earning", precision = 10, scale = 2)
+    private BigDecimal shipperEarning = BigDecimal.ZERO;
 
     // Chi tiết đơn hàng
     @Builder.Default
@@ -339,6 +385,64 @@ public class Order {
      */
     public LocalDateTime getDeliveredAt() {
         return deliveredDate;
+    }
+
+    // ==================== Shipper Helper Methods ====================
+
+    /**
+     * Kiểm tra đơn hàng đã được gán shipper chưa
+     */
+    public boolean hasShipper() {
+        return shipper != null;
+    }
+
+    /**
+     * Kiểm tra đơn hàng có thể gán shipper không (trạng thái PROCESSING)
+     */
+    public boolean canAssignShipper() {
+        return status == OrderStatus.PROCESSING && shipper == null;
+    }
+
+    /**
+     * Gán shipper cho đơn hàng
+     */
+    public void assignShipper(User shipperUser) {
+        this.shipper = shipperUser;
+        this.pickedUpAt = LocalDateTime.now();
+    }
+
+    /**
+     * Shipper bắt đầu giao hàng
+     */
+    public void startDelivery() {
+        this.deliveryStartedAt = LocalDateTime.now();
+        this.status = OrderStatus.SHIPPING;
+        this.shippedDate = LocalDateTime.now();
+    }
+
+    /**
+     * Shipper hoàn thành giao hàng
+     */
+    public void completeDelivery(String notes, String proofImage) {
+        this.deliveryCompletedAt = LocalDateTime.now();
+        this.deliveryNotes = notes;
+        this.deliveryProofImage = proofImage;
+        this.status = OrderStatus.DELIVERED;
+        this.deliveredDate = LocalDateTime.now();
+    }
+
+    /**
+     * Lấy tên shipper
+     */
+    public String getShipperName() {
+        return shipper != null ? shipper.getFullName() : null;
+    }
+
+    /**
+     * Lấy số điện thoại shipper
+     */
+    public String getShipperPhone() {
+        return shipper != null ? shipper.getPhone() : null;
     }
 
     @Override
